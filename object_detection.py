@@ -28,7 +28,6 @@ Usage (from main.py or standalone testing)
 
 from __future__ import annotations
 
-import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -63,12 +62,11 @@ class DetectionConfig:
 
     # Per-class box colours (BGR).  Falls back to BOX_COLOR_DEFAULT for
     # any class_id not listed here.
-    CLASS_COLORS     : dict  = field(default_factory=dict)
     BOX_COLOR_DEFAULT: tuple = (0, 200, 255)   # amber / yellow-orange
 
     def __init__(self):
-        # Populate default colour map (can be overridden after construction)
-        self.CLASS_COLORS = {}
+        # Per-instance so overrides don't leak between configs
+        self.CLASS_COLORS: dict[int, tuple] = {}
 
 
 # =============================================================================
@@ -144,8 +142,8 @@ class ObjectDetector:
         Parameters
         ----------
         frame_bgr   : (H, W, 3) uint8 BGR image from ZED left camera.
-        depth_clean : (H, W) float32 depth array (NaNs for invalid pixels),
-                      as returned by zed_scene_core.preprocess_depth().
+        depth_clean : (H, W) float32 depth array in metres. Non-finite
+                      pixels (NaN / ±inf) are ignored when sampling.
         frame_idx   : Current frame counter (for logging).
 
         Returns

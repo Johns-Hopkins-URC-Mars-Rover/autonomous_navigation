@@ -111,7 +111,9 @@ class DisplacementTracker:
         self._recent_mags.append(step_mag)
         smoothed_speed = float(np.mean(self._recent_mags)) / max(dt, 1e-6)
 
-        linearity = net_mag / self._cum_dist if self._cum_dist > 1e-9 else 1.0
+        # Capped at 1: after a relocalisation the net vector includes the
+        # correction jump, which isn't counted in the path length.
+        linearity = min(net_mag / self._cum_dist, 1.0) if self._cum_dist > 1e-9 else 1.0
 
         self.positions.append(pos.copy())
         self.displacement_mags.append(step_mag)
@@ -140,7 +142,7 @@ class DisplacementTracker:
             "final_net_magnitude":  self.net_displacements[-1] if self.net_displacements else 0.0,
             "mean_speed":           float(np.mean(speeds)) if len(speeds) else 0.0,   # [m/s]
             "max_speed":            float(np.max(speeds))  if len(speeds) else 0.0,   # [m/s]
-            "linearity_ratio":      (self.net_displacements[-1] / self._cum_dist
+            "linearity_ratio":      (min(self.net_displacements[-1] / self._cum_dist, 1.0)
                                      if self._cum_dist > 1e-9 else 1.0),
         }
 
@@ -309,7 +311,8 @@ def save_analysis_plots(tracker: DisplacementTracker,
     ax3.legend(); ax3.grid(True, alpha=0.3)
 
     # 4. Linearity ratio
-    lin = np.where(cum_dists > 1e-9, net_dists / cum_dists, 1.0)
+    lin = np.where(cum_dists > 1e-9,
+                   np.minimum(net_dists / np.maximum(cum_dists, 1e-9), 1.0), 1.0)
     ax4 = axes[1, 0]
     ax4.plot(time_axis, lin, color="purple", linewidth=1.5)
     ax4.axhline(1.0, color="black", linewidth=0.5, linestyle="--")

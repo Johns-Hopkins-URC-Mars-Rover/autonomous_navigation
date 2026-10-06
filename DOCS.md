@@ -240,7 +240,7 @@ The unified entry point. Owns the `sl.Camera` handle from open to close. Imports
 2. Retrieve left image and depth map (shared by all three pipelines).
 3. VO pipeline: query 6-DoF pose → `pose.get_rotation_matrix()` → compute velocity → update `DisplacementTracker` → pack `NavState`. When tracking is not `OK`, the velocity reference and EMA are reset, so a relocalisation jump doesn't show up as a speed spike.
 4. Scene pipeline: `preprocess_depth` → `detect_walls` → `detect_hallway` → `probe_line_of_sight` → `find_forward_clusters`.
-5. Detection pipeline (if enabled): `ObjectDetector.run(frame_bgr, depth_clean)` → `DetectionResult`.
+5. Detection pipeline (if enabled): `ObjectDetector.run(frame_bgr, depth_raw)` → `DetectionResult`. Detection uses the raw depth (camera range up to 20 m), not the scene-clamped depth, so distant targets still get a distance.
 6. Compose display: scene overlay → VO HUD → detection overlay → depth colourmap panel.
 7. Every `--plot-interval` frames, refresh live matplotlib trajectory.
 
@@ -262,7 +262,8 @@ All tuneable detection parameters as class attributes:
 | `CONF_THRESH` | `0.35` | Minimum detection confidence. |
 | `IOU_THRESH` | `0.45` | NMS IoU overlap threshold. |
 | `DEPTH_SAMPLE_FRAC` | `0.3` | Fractional size of centre crop for depth sampling. |
-| `BOX_COLOR` | `(0, 200, 255)` | BGR colour for detection bounding boxes. |
+| `BOX_COLOR_DEFAULT` | `(0, 200, 255)` | BGR colour for boxes whose class has no entry in `CLASS_COLORS`. |
+| `CLASS_COLORS` | `{}` | Per-class BGR colours, keyed by class id. |
 | `BOX_THICKNESS` | `2` | Bounding box line thickness in pixels. |
 | `LABEL_FONT_SCALE` | `0.55` | Label text scale. |
 | `SHOW_CONF` | `True` | Whether to include confidence score in label. |
@@ -488,7 +489,7 @@ See [slam/zed_vo_core.py](#slamzed_vo_corepy) above.
 | Parameter | Default | Effect |
 |---|---|---|
 | `DEPTH_MIN_M` | `0.3` | Ignore depth closer than this. Increase to reduce housing noise. |
-| `DEPTH_MAX_M` | `8.0` | Ignore depth farther than this. Reduce for indoor-only use. |
+| `DEPTH_MAX_M` | `8.0` | Ignore depth farther than this in scene analysis. Does not affect YOLO distance estimates. |
 | `GRID_COLS` / `GRID_ROWS` | `12` / `8` | Finer grids catch smaller wall surfaces. |
 | `WALL_VAR_THRESH` | `0.04` | Max depth variance (m²) for a flat cell. Increase for textured surfaces. |
 | `WALL_MEAN_MAX_M` | `5.0` | Far walls beyond this are not classified. |

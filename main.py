@@ -24,8 +24,8 @@ Usage
 from __future__ import annotations
 
 import argparse
+import os
 import sys
-import time
 from pathlib import Path
 from threading import Lock
 
@@ -43,7 +43,6 @@ except ImportError:
 
 # ── SLAM helpers (slam/ sub-package) ─────────────────────────────────────────
 try:
-    import sys, os
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), "slam"))
 
     from zed_vo_core import (
@@ -357,7 +356,10 @@ def run(args: argparse.Namespace) -> None:
             # ── Object detection ──────────────────────────────────────────────
             det_result: DetectionResult | None = None
             if detector is not None:
-                det_result = detector.run(frame_bgr, depth_clean, frame_idx)
+                # Raw depth keeps the camera's full range (scene analysis
+                # clamps at SceneConfig.DEPTH_MAX_M); invalid pixels are NaN/inf
+                # and skipped by the detector's depth sampling.
+                det_result = detector.run(frame_bgr, depth_raw, frame_idx)
 
             # ── Console output ────────────────────────────────────────────────
             if frame_idx % args.verbose_interval == 0:
@@ -393,9 +395,9 @@ def run(args: argparse.Namespace) -> None:
                 _draw_vo_hud(vis[:frame_bgr.shape[0], :], nav)
 
                 # 3. Detection overlay (YOLO boxes + detection panel)
-                if det_result is not None and det_result.any_detected:
+                if det_result is not None:
                     vis = ObjectDetector.draw_overlay(
-                        vis, det_result, depth_clean, det_cfg)
+                        vis, det_result, depth_raw, det_cfg)
 
                 # 4. Depth colourmap side-panel
                 depth_col = colorise_depth(depth_clean, max_m=scene_cfg.DEPTH_MAX_M)

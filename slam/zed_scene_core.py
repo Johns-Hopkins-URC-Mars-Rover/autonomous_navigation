@@ -1,6 +1,6 @@
 """
-zed_scene_understanding.py  —  Wall/Hallway Detection + Line-of-Sight Object Validation
-========================================================================================
+zed_scene_core.py  —  Wall/Hallway Detection + Line-of-Sight Object Validation
+===============================================================================
 Uses the ZED depth map + left RGB image to:
 
   1. WALL DETECTION      — segments the depth frame into planar surfaces,
@@ -17,10 +17,10 @@ All output is overlaid on the live camera feed and printed to the console.
 
 Usage
 -----
-  python zed_scene_understanding.py               # live camera
-  python zed_scene_understanding.py --svo f.svo   # SVO replay
-  python zed_scene_understanding.py --no-display  # headless
-  python zed_scene_understanding.py --help
+  python slam/zed_scene_core.py               # live camera
+  python slam/zed_scene_core.py --svo f.svo   # SVO replay
+  python slam/zed_scene_core.py --no-display  # headless
+  python slam/zed_scene_core.py --help
 """
 
 import argparse
