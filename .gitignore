@@ -1,1 +1,18 @@
 old*
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# ZED recordings and session outputs
+*.svo
+*.svo2
+*.area
+zed_trajectory*.txt
+zed_displacement_analysis.png
+zed_trajectory_plot.png
+
+# YOLO / ultralytics run artefacts
+runs/

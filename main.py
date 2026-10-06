@@ -17,6 +17,7 @@ Usage
   python main.py --no-detection               # SLAM + scene only
   python main.py --no-imu                     # ZED gen-1 (no IMU)
   python main.py --save-svo output.svo        # record while running
+  python main.py --area-map rover_yard.area   # relocalise into a saved map
   python main.py --help                       # all flags
 """
 
@@ -102,7 +103,8 @@ def _build_init_params(args: argparse.Namespace) -> sl.InitParameters:
     p.camera_fps             = args.fps
     p.depth_mode             = sl.DEPTH_MODE.ULTRA
     p.coordinate_units       = sl.UNIT.METER
-    p.coordinate_system      = sl.COORDINATE_SYSTEM.RIGHT_HANDED_Y_UP
+    # ROS convention (REP 103): X forward, Y left, Z up
+    p.coordinate_system      = sl.COORDINATE_SYSTEM.RIGHT_HANDED_Z_UP_X_FWD
     p.depth_minimum_distance = 0.2
     p.depth_maximum_distance = 20.0
 
@@ -113,11 +115,16 @@ def _build_init_params(args: argparse.Namespace) -> sl.InitParameters:
     return p
 
 
-def _build_tracking_params() -> sl.PositionalTrackingParameters:
+def _build_tracking_params(args: argparse.Namespace) -> sl.PositionalTrackingParameters:
     tp = sl.PositionalTrackingParameters()
     tp.enable_imu_fusion  = True
     tp.enable_area_memory = True
     tp.set_as_static      = False
+    # Reload a previously saved area map so this run relocalises into the
+    # same world frame as the last one.
+    if not args.no_area_map and args.area_map.exists():
+        tp.area_file_path = str(args.area_map)
+        print(f"[INFO] Loading area map: {args.area_map}")
     return tp
 
 
@@ -191,10 +198,12 @@ def run(args: argparse.Namespace) -> None:
     cam_w    = cam_info.camera_configuration.resolution.width
     cam_h    = cam_info.camera_configuration.resolution.height
     fps_cam  = cam_info.camera_configuration.fps
+    scene_cfg.FX_PX = cam_info.camera_configuration.calibration_parameters.left_cam.fx
 
     print(f"\n{'='*64}")
     print(f"ZED Camera  : {model}  (S/N {serial})")
     print(f"Resolution  : {cam_w}×{cam_h} @ {fps_cam} FPS")
+    print(f"Coord system: RIGHT_HANDED_Z_UP_X_FWD  |  Units: metres")
     print(f"Detection   : {'enabled  (' + Path(args.model).name + ')' if detector else 'disabled'}")
     print(f"{'='*64}\n")
 
@@ -208,7 +217,7 @@ def run(args: argparse.Namespace) -> None:
             print(f"[WARN] SVO recording failed to start: {err}")
 
     # ── Positional tracking ───────────────────────────────────────────────────
-    err = zed.enable_positional_tracking(_build_tracking_params())
+    err = zed.enable_positional_tracking(_build_tracking_params(args))
     if err != sl.ERROR_CODE.SUCCESS:
         zed.close()
         sys.exit(f"[ERROR] Cannot enable positional tracking: {err}")
@@ -254,6 +263,7 @@ def run(args: argparse.Namespace) -> None:
     prev_pos    = None
     prev_time_s = None
     traj_buffer = []
+    tum_rows    = []   # [timestamp, tx, ty, tz, qx, qy, qz, qw]
 
     try:
         while True:
@@ -286,13 +296,8 @@ def run(args: argparse.Namespace) -> None:
                 t   = pose.get_translation().get()
                 pos = np.array([t[0], t[1], t[2]])
 
-                q = pose.get_orientation().get()   # [ox, oy, oz, ow]
-                ox, oy, oz, ow = q
-                R = np.array([
-                    [1-2*(oy**2+oz**2),   2*(ox*oy-oz*ow),   2*(ox*oz+oy*ow)],
-                    [  2*(ox*oy+oz*ow), 1-2*(ox**2+oz**2),   2*(oy*oz-ox*ow)],
-                    [  2*(ox*oz-oy*ow),   2*(oy*oz+ox*ow), 1-2*(ox**2+oy**2)],
-                ])
+                q     = pose.get_orientation().get()   # [qx, qy, qz, qw]
+                R     = pose.get_rotation_matrix().r.copy()
                 euler = rotation_matrix_to_euler(R)
 
                 velocity = (vel_ema.update((pos - prev_pos) / dt)
@@ -324,7 +329,14 @@ def run(args: argparse.Namespace) -> None:
                     nav.timestamp_s         = ts_s
 
                 traj_buffer.append(pos.copy())
+                tum_rows.append([ts_s, *pos, *q])
                 prev_pos = pos
+            else:
+                # Tracking lost / searching: drop the reference so the jump
+                # on relocalisation isn't divided by a single frame's dt.
+                prev_pos = None
+                vel_ema.reset()
+                tracker.mark_gap()
 
             prev_time_s = ts_s
 
@@ -424,7 +436,13 @@ def run(args: argparse.Namespace) -> None:
     cv2.destroyAllWindows()
     if plotter:
         plotter.close()
-    zed.disable_positional_tracking()
+    if not args.no_area_map:
+        # Saves the area map on disable (blocks until the export finishes)
+        args.area_map.parent.mkdir(parents=True, exist_ok=True)
+        zed.disable_positional_tracking(str(args.area_map))
+        print(f"Saved area map: {args.area_map}")
+    else:
+        zed.disable_positional_tracking()
     zed.disable_recording()
     zed.close()
 
@@ -436,18 +454,19 @@ def run(args: argparse.Namespace) -> None:
     print(f"Frames processed      : {summary['total_frames']}")
     print(f"Total path length     : {summary['total_path_length']:.4f} m")
     print(f"Net displacement      : {summary['final_net_magnitude']:.4f} m")
-    print(f"Mean step speed       : {summary['mean_speed']:.4f} m/frame")
-    print(f"Max step speed        : {summary['max_speed']:.4f} m/frame")
+    print(f"Mean speed            : {summary['mean_speed']:.4f} m/s")
+    print(f"Max speed             : {summary['max_speed']:.4f} m/s")
     print(f"Linearity ratio       : {summary['linearity_ratio']:.3f}  (1.0 = straight)")
     print(f"Detection model       : {Path(args.model).name if detector else 'disabled'}")
     print(f"{'='*64}\n")
 
     # ── Save trajectory ───────────────────────────────────────────────────────
-    if tracker.positions:
-        traj_arr = np.array(tracker.positions)
-        np.savetxt("zed_trajectory.txt", traj_arr,
-                   header="X(m) Y(m) Z(m)", comments="# ")
-        print("Saved: zed_trajectory.txt")
+    # TUM format, readable by `evo` (evo_traj tum zed_trajectory.txt --plot)
+    if tum_rows:
+        np.savetxt("zed_trajectory.txt", np.array(tum_rows),
+                   fmt=["%.9f"] + ["%.6f"] * 7,
+                   header="timestamp tx ty tz qx qy qz qw", comments="# ")
+        print("Saved: zed_trajectory.txt (TUM format)")
 
     # ── Analysis plots ────────────────────────────────────────────────────────
     if not args.no_plot and len(tracker.positions) > 2:
@@ -474,6 +493,10 @@ def _build_parser() -> argparse.ArgumentParser:
                    help="SVO file for playback (omit for live camera)")
     p.add_argument("--save-svo", type=Path, default=None,
                    help="Record the session to an SVO file")
+    p.add_argument("--area-map", type=Path, default=Path("zed_area_map.area"),
+                   help="Area map to load at start (if it exists) and save on exit")
+    p.add_argument("--no-area-map", action="store_true",
+                   help="Don't load or save an area map")
 
     # Camera
     p.add_argument("--resolution", default="HD720",
@@ -498,7 +521,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--no-plot",       action="store_true",
                    help="Disable matplotlib (headless Jetson)")
     p.add_argument("--view-2d",       action="store_true",
-                   help="2-D (X–Z) trajectory view instead of 3-D")
+                   help="2-D (X–Y) top-down trajectory view instead of 3-D")
     p.add_argument("--plot-interval", type=int, default=10,
                    help="Update live trajectory plot every N frames")
 

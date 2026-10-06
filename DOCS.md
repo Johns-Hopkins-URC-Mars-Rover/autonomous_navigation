@@ -13,7 +13,6 @@
 7. [Module Reference](#module-reference)
    - [main.py](#mainpy)
    - [object_detection.py](#object_detectionpy)
-   - [slam/zed_slam_main.py](#slamzed_slam_mainpy)
    - [slam/zed_vo_core.py](#slamzed_vo_corepy)
    - [slam/zed_scene_core.py](#slamzed_scene_corepy)
 8. [Data Structures](#data-structures)
@@ -47,14 +46,13 @@ autonomous_navigation/
 ├── main.py                    ← unified entry point (run this)
 ├── object_detection.py        ← YOLO model loading, inference, overlay
 ├── DOCS.md                    ← this file
-├── environment.yml            ← conda environment spec
+├── requirements.txt           ← pip dependencies (ZED SDK + torch installed separately)
 │
 ├── models/
-│   ├── best.pt                ← primary YOLOv8 model weights
-│   └── best_bw.pt             ← secondary / greyscale model weights
+│   ├── best.pt                ← primary YOLOv8 model weights (Git LFS)
+│   └── best_bw.pt             ← secondary / greyscale model weights (Git LFS)
 │
 └── slam/
-    ├── zed_slam_main.py       ← SLAM-only entry point (VO + scene, no YOLO)
     ├── zed_vo_core.py         ← VO data structures, tracking, smoothing, plotting
     └── zed_scene_core.py      ← scene analysis, depth processing, visualisation
 ```
@@ -107,20 +105,20 @@ Download and install from [stereolabs.com/developers/release](https://www.stereo
 
 ### Python packages
 
-```bash
-pip install numpy scipy opencv-python matplotlib
-pip install torch torchvision          # for YOLO inference
-pip install ultralytics                # YOLOv8
-```
+Install PyTorch first, for your platform:
 
-All packages are also captured in `environment.yml`. To recreate the exact environment:
+- **Desktop:** `pip install torch torchvision`
+- **Jetson:** use NVIDIA's JetPack-specific wheels. A plain `pip install torch` gives a CPU-only build.
+
+Then install the rest:
 
 ```bash
-conda env create -f environment.yml
-conda activate base
+pip install -r requirements.txt
 ```
 
 ### Model weights
+
+The weights are stored with [Git LFS](https://git-lfs.com). After cloning, run `git lfs install && git lfs pull` if `models/*.pt` are small text pointer files.
 
 Place your trained weights in `models/`:
 
@@ -151,6 +149,9 @@ python main.py --no-display --no-plot
 # Record session to SVO while running
 python main.py --save-svo output.svo
 
+# Relocalise into (and update) a named area map
+python main.py --area-map maps/rover_yard.area
+
 # HD1080 at 60 FPS, 2-D trajectory view
 python main.py --resolution HD1080 --fps 60 --view-2d
 
@@ -176,6 +177,8 @@ Press **Q** or **ESC** in any OpenCV window to stop.
 |---|---|---|
 | `--svo PATH` | None | SVO file for replay. Omit to use the live camera. |
 | `--save-svo PATH` | None | Record the live session to an SVO file (H.264). |
+| `--area-map PATH` | `zed_area_map.area` | Area map to load at startup (if the file exists) and save on exit. A reloaded map puts the run in the same world frame as the earlier one. |
+| `--no-area-map` | off | Don't load or save an area map. |
 
 ### Camera
 
@@ -199,7 +202,7 @@ Press **Q** or **ESC** in any OpenCV window to stop.
 |---|---|---|
 | `--no-display` | off | Disable all OpenCV windows. |
 | `--no-plot` | off | Disable matplotlib live and post-session trajectory windows. |
-| `--view-2d` | off | Top-down (X–Z) trajectory view instead of 3-D. |
+| `--view-2d` | off | Top-down (X–Y) trajectory view instead of 3-D. |
 | `--plot-interval N` | `10` | Refresh live trajectory plot every N frames. |
 
 ### VO Smoothing
@@ -235,13 +238,13 @@ The unified entry point. Owns the `sl.Camera` handle from open to close. Imports
 
 1. `zed.grab(runtime)` — acquire frame.
 2. Retrieve left image and depth map (shared by all three pipelines).
-3. VO pipeline: query 6-DoF pose → extract rotation → compute velocity → update `DisplacementTracker` → pack `NavState`.
+3. VO pipeline: query 6-DoF pose → `pose.get_rotation_matrix()` → compute velocity → update `DisplacementTracker` → pack `NavState`. When tracking is not `OK`, the velocity reference and EMA are reset, so a relocalisation jump doesn't show up as a speed spike.
 4. Scene pipeline: `preprocess_depth` → `detect_walls` → `detect_hallway` → `probe_line_of_sight` → `find_forward_clusters`.
 5. Detection pipeline (if enabled): `ObjectDetector.run(frame_bgr, depth_clean)` → `DetectionResult`.
 6. Compose display: scene overlay → VO HUD → detection overlay → depth colourmap panel.
 7. Every `--plot-interval` frames, refresh live matplotlib trajectory.
 
-On exit: closes camera, prints session summary, saves trajectory file and analysis plots.
+On exit: saves the area map, closes the camera, prints the session summary, and saves the trajectory file and analysis plots.
 
 ---
 
@@ -294,20 +297,6 @@ Draws labelled bounding boxes on a copy of `frame`. Each box includes the class 
 
 ---
 
-### `slam/zed_slam_main.py`
-
-The SLAM-only entry point (VO + scene understanding, no YOLO). Run directly for standalone SLAM sessions without object detection.
-
-```bash
-python slam/zed_slam_main.py
-python slam/zed_slam_main.py --svo file.svo
-python slam/zed_slam_main.py --no-display --no-plot
-```
-
-Accepts all the same flags as `main.py` except `--model`, `--conf`, `--iou`, and `--no-detection`.
-
----
-
 ### `slam/zed_vo_core.py`
 
 Pure-Python VO helpers. No ZED SDK calls. Independently importable and testable.
@@ -338,13 +327,14 @@ Accumulates pose updates and exposes navigation statistics.
 
 ```python
 tracker = DisplacementTracker(speed_window=10)
-stats   = tracker.update(pos, dt)   # call once per frame
+stats   = tracker.update(pos, dt)   # call once per frame with tracking OK
+tracker.mark_gap()                  # call when tracking is lost
 summary = tracker.summary()         # call at end of session
 ```
 
 `update()` returns a dict with keys: `step`, `step_mag`, `cumulative_distance`, `net_displacement`, `net_magnitude`, `smoothed_speed`, `linearity_ratio`.
 
-`summary()` returns: `total_frames`, `total_path_length`, `final_net_magnitude`, `mean_speed`, `max_speed`, `linearity_ratio`.
+`summary()` returns: `total_frames`, `total_path_length`, `final_net_magnitude`, `mean_speed`, `max_speed` (both in m/s), `linearity_ratio`.
 
 #### `EMASmoothing`
 
@@ -363,7 +353,7 @@ Applies Savitzky-Golay smoothing independently to X, Y, Z columns of an `(N, 3)`
 
 #### `rotation_matrix_to_euler(R) → np.ndarray`
 
-Converts a 3×3 SO(3) rotation matrix to `[roll, pitch, yaw]` in degrees (ZYX convention). Handles the gimbal-lock singularity (`sy < 1e-6`).
+Converts a 3×3 SO(3) rotation matrix to `[roll, pitch, yaw]` in degrees (ZYX convention, Z-up). Yaw is heading about +Z. Handles the gimbal-lock singularity (`sy < 1e-6`).
 
 #### `LivePlotter`
 
@@ -378,7 +368,7 @@ plotter.close()   # call at session end
 #### `save_analysis_plots(tracker, savgol_w, savgol_p, view_3d)`
 
 Saves two PNG files at session end:
-- `zed_displacement_analysis.png` — 6-panel figure: position over time, per-frame step size, cumulative vs net distance, linearity ratio, XZ top-down path, height over time.
+- `zed_displacement_analysis.png` — 6-panel figure: position over time, per-frame step size, cumulative vs net distance, linearity ratio, XY top-down path, height (Z) over time.
 - `zed_trajectory_plot.png` — full-resolution 3-D or 2-D trajectory with raw + smoothed overlays.
 
 ---
@@ -397,7 +387,7 @@ Divides the depth image into a `GRID_ROWS × GRID_COLS` grid. Each cell is marke
 
 #### `detect_hallway(depth, walls, cfg) → HallwayInfo`
 
-Computes mean depth of left, centre, and right vertical strips. Declares a hallway when both side strips are close, the centre is significantly deeper, and the depth ratio exceeds `HALLWAY_OPEN_RATIO`. Width is estimated from a 90° horizontal FOV assumption.
+Computes mean depth of left, centre, and right vertical strips. Declares a hallway when both side strips are close, the centre is significantly deeper, and the depth ratio exceeds `HALLWAY_OPEN_RATIO`. Width is estimated by back-projecting the centre column of each side strip using the calibrated focal length (`SceneConfig.FX_PX`, set from the ZED calibration at startup).
 
 #### `probe_line_of_sight(depth, cfg) → LOSObject`
 
@@ -505,6 +495,8 @@ See [slam/zed_vo_core.py](#slamzed_vo_corepy) above.
 | `HALLWAY_SIDE_MAX_M` | `2.5` | Side walls must be closer than this. Increase for wider corridors. |
 | `HALLWAY_CENTRE_MIN_M` | `1.2` | Minimum depth difference between centre and sides. |
 | `HALLWAY_OPEN_RATIO` | `1.5` | Centre-to-side depth ratio. Reduce for narrower hallways. |
+| `FX_PX` | `None` | Left-camera focal length in pixels. Set automatically from calibration. |
+| `HFOV_FALLBACK_DEG` | `110.0` | Horizontal FOV used for the width estimate if `FX_PX` is unset. |
 | `LOS_WIDTH_FRAC` / `LOS_HEIGHT_FRAC` | `0.15` | Fractional half-size of the LOS probe rectangle. |
 | `LOS_OBJECT_MAX_M` | `4.0` | Report LOS object if median probe depth is below this. |
 | `CLUSTER_DEPTH_MAX_M` | `4.0` | Only search for clusters within this range. |
@@ -529,7 +521,8 @@ All files are written to the **working directory** at session end.
 
 | File | Condition | Description |
 |---|---|---|
-| `zed_trajectory.txt` | Always (if frames > 0) | `X Y Z` trajectory, one row per frame. Header: `# X(m) Y(m) Z(m)`. |
+| `zed_trajectory.txt` | Always (if frames > 0) | Trajectory in [TUM format](https://github.com/MichaelGrupp/evo/wiki/Formats#tum---tum-rgb-d-dataset-trajectory-format): `timestamp tx ty tz qx qy qz qw`, one row per tracked frame. Evaluate it with `evo`, e.g. `evo_traj tum zed_trajectory.txt --plot`. |
+| `zed_area_map.area` | Unless `--no-area-map` | ZED area map, reloaded on the next run for relocalisation. |
 | `zed_displacement_analysis.png` | Unless `--no-plot`, frames > 2 | 6-panel analysis figure. |
 | `zed_trajectory_plot.png` | Unless `--no-plot`, frames > 2 | Full-resolution smoothed trajectory. |
 | `<name>.svo` | Only with `--save-svo` | H.264-compressed SVO recording. |
@@ -538,13 +531,13 @@ Session summary always printed to stdout:
 
 ```
 ================================================================
-ZED SLAM — SESSION SUMMARY
+NAVIGATION PIPELINE — SESSION SUMMARY
 ================================================================
 Frames processed      : 1420
 Total path length     : 18.3421 m
 Net displacement      : 12.0034 m
-Mean step speed       : 0.0129 m/frame
-Max step speed        : 0.0471 m/frame
+Mean speed            : 0.3870 m/s
+Max speed             : 1.4130 m/s
 Linearity ratio       : 0.654  (1.0 = straight)
 ================================================================
 ```
@@ -589,11 +582,13 @@ Press **Q** or **ESC** to quit cleanly.
 
 ## Coordinate System
 
-The ZED SDK is configured with `RIGHT_HANDED_Y_UP`:
+The ZED SDK is configured with `RIGHT_HANDED_Z_UP_X_FWD`, the ROS convention (REP 103):
 
-- **+X** → right
-- **+Y** → up
-- **+Z** → backward (camera looks toward –Z)
+- **+X** → forward
+- **+Y** → left
+- **+Z** → up
+
+The ground plane is X–Y and height is Z. Poses can be passed straight to ROS 2 / Nav2 without remapping axes.
 
 All positions and distances are in **metres**. The origin is the camera's pose at session start (or SVO start).
 
@@ -623,8 +618,6 @@ Trajectory and analysis files are still saved. Console output at `--verbose-inte
 
 ```bash
 python main.py --no-detection
-# or run the dedicated SLAM entry point:
-python slam/zed_slam_main.py
 ```
 
 **Scene understanding only (no VO, no YOLO):**
@@ -642,8 +635,8 @@ This is useful for tuning `SceneConfig` parameters before integrating the full p
 ## Limitations
 
 - Wall detection uses a flat-variance heuristic and assumes approximately fronto-parallel surfaces. Angled or highly textured walls may be missed.
-- Hallway width estimation assumes a horizontal FOV of ~90°, accurate for ZED 2 at HD720. Other models/resolutions may differ slightly.
+- Hallway width is a rough estimate: it uses mean strip depth, so clutter in a side strip biases it.
 - The LOS probe reports median depth of the probe region but does not classify object type — that role is now filled by the YOLO pipeline.
 - Cluster detection is purely geometric; overlapping clusters at similar depths may merge into a single bounding box.
 - YOLO depth estimates are sampled from the centre crop of each bounding box. Objects whose depth is partly occluded or at a range boundary may show inaccurate distance readings.
-- Area memory (`enable_area_memory = True`) improves loop-closure but increases RAM. Disable in `slam/zed_slam_main.py`:`_build_tracking_params()` if memory is constrained.
+- Area memory (`enable_area_memory = True`) improves loop-closure but increases RAM. Disable in `main.py`:`_build_tracking_params()` if memory is constrained.

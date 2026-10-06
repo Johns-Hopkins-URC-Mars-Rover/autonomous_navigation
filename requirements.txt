@@ -1,0 +1,13 @@
+# Python dependencies for the ZED navigation pipeline.
+#
+# NOT installed from here (platform-specific):
+#   - pyzed:  comes with the ZED SDK installer, then run its get_python_api.py
+#             https://www.stereolabs.com/developers/release/
+#   - torch:  on desktop `pip install torch torchvision`; on Jetson use NVIDIA's
+#             JetPack-specific wheels (https://developer.nvidia.com/embedded/downloads)
+#             BEFORE installing ultralytics, so pip doesn't pull a CPU-only build.
+numpy>=1.24
+scipy>=1.10
+opencv-python>=4.8
+matplotlib>=3.7
+ultralytics>=8.0

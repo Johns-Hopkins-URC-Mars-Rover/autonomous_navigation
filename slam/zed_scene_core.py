@@ -63,6 +63,12 @@ class Config:
     HALLWAY_CENTRE_MIN_M = 1.2  # centre must be this much farther than sides
     HALLWAY_OPEN_RATIO = 1.5    # centre_depth / side_depth > this → hallway
 
+    # ── Camera intrinsics ─────────────────────────────────────────────────────
+    # Left-camera focal length in pixels at the depth-map resolution. Set from
+    # the ZED calibration at startup; None falls back to HFOV_FALLBACK_DEG.
+    FX_PX              = None
+    HFOV_FALLBACK_DEG  = 110.0  # approx. ZED 2 / 2i horizontal FOV
+
     # ── Line-of-sight probe ───────────────────────────────────────────────────
     # Samples a central rectangle (fraction of frame size)
     LOS_WIDTH_FRAC     = 0.15   # half-width of probe region (fraction of W)
@@ -217,10 +223,13 @@ def detect_hallway(depth: np.ndarray, walls: WallInfo, cfg: Config) -> HallwayIn
         and (centre_d - side_d) > cfg.HALLWAY_CENTRE_MIN_M
     )
 
-    # Rough width: if we know the camera HFOV (~90° for ZED 2 at HD720)
-    # width ≈ 2 * side_dist * tan(FOV/6)  (for one third of frame)
-    hfov_rad   = math.radians(90)
-    width_est  = 2 * side_d * math.tan(hfov_rad / 6) if side_d < float("inf") else 0.0
+    # Rough width: back-project the centre column of each side strip
+    # (u = w/6 and u = 5w/6) at its mean depth: lateral x = d * (u - cx) / fx.
+    fx = cfg.FX_PX or (w / 2) / math.tan(math.radians(cfg.HFOV_FALLBACK_DEG) / 2)
+    if math.isfinite(left_d) and math.isfinite(right_d):
+        width_est = (left_d + right_d) * (w / 3) / fx
+    else:
+        width_est = 0.0
 
     return HallwayInfo(
         detected      = hallway,
@@ -385,17 +394,17 @@ def draw_overlay(frame: np.ndarray, depth: np.ndarray,
 
 
 # =============================================================================
-# Aliases for zed_slam_main.py compatibility
+# Aliases used by main.py
 # =============================================================================
 
-#: ``SceneConfig`` is the public name expected by ``zed_slam_main.py``.
+#: ``SceneConfig`` is the public name expected by ``main.py``.
 #: ``Config`` is kept for backwards compatibility with the standalone script.
 SceneConfig = Config
 
 def draw_scene_overlay(frame: np.ndarray, depth: np.ndarray,
                        scene: SceneState, clusters: list,
                        cfg: Config) -> np.ndarray:
-    """Thin wrapper around :func:`draw_overlay` — name used by zed_slam_main."""
+    """Thin wrapper around :func:`draw_overlay` — name used by main.py."""
     return draw_overlay(frame, depth, scene, clusters, cfg)
 
 
@@ -424,6 +433,9 @@ def run(args: argparse.Namespace):
     err = zed.open(p)
     if err != sl.ERROR_CODE.SUCCESS:
         sys.exit(f"[ERROR] Cannot open ZED: {err}")
+
+    cfg.FX_PX = (zed.get_camera_information().camera_configuration
+                 .calibration_parameters.left_cam.fx)
 
     runtime = sl.RuntimeParameters()
     runtime.confidence_threshold = 50

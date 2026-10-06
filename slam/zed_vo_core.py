@@ -1,17 +1,20 @@
 """
-zed_vo_core.py  —  Visual Odometry helpers (imported by zed_slam_main.py)
-=========================================================================
+zed_vo_core.py  —  Visual Odometry helpers (imported by main.py)
+================================================================
 Contains all VO-specific logic that does NOT touch the ZED camera handle:
   • NavState          — thread-safe navigation snapshot dataclass
   • DisplacementTracker — accumulates pose updates, exposes path statistics
   • EMASmoothing       — exponential moving average for velocity
   • smooth_trajectory  — Savitzky-Golay smoothing for post-run plots
-  • rotation_matrix_to_euler — SO(3) → roll/pitch/yaw
+  • rotation_matrix_to_euler — SO(3) → roll/pitch/yaw (Z-up, ZYX order)
   • LivePlotter        — matplotlib real-time trajectory window
   • save_analysis_plots — post-session analysis figure suite
 
 Nothing here opens a camera or calls sl.Camera.  The main loop in
-zed_slam_main.py owns the ZED handle and passes poses + timestamps in.
+main.py owns the ZED handle and passes poses + timestamps in.
+
+Poses are expected in RIGHT_HANDED_Z_UP_X_FWD (the ROS convention):
+X forward, Y left, Z up.  The ground plane is X–Y and height is Z.
 """
 
 from __future__ import annotations
@@ -73,12 +76,18 @@ class DisplacementTracker:
         self._cum_dist    = 0.0
         self._frame_count = 0
         self._recent_mags: deque[float] = deque(maxlen=speed_window)
+        self._gap         = False
 
         # Full history for post-run plots
+        self.step_speeds:        list[float]      = []   # [m/s]
         self.positions:          list[np.ndarray] = []
         self.displacement_mags:  list[float]      = []
         self.cumulative_dists:   list[float]      = []
         self.net_displacements:  list[float]      = []
+
+    def mark_gap(self) -> None:
+        """Call when tracking is lost so the next update isn't one big step."""
+        self._gap = True
 
     def update(self, pos: np.ndarray, dt: float) -> dict:
         pos = np.asarray(pos, dtype=np.float64).flatten()
@@ -86,6 +95,11 @@ class DisplacementTracker:
         if self._frame_count == 0:
             self._origin   = pos.copy()
             self._prev_pos = pos.copy()
+        elif self._gap:
+            # Relocalised after a tracking loss: restart stepping from here
+            self._prev_pos = pos.copy()
+            self._recent_mags.clear()
+        self._gap = False
 
         step     = pos - self._prev_pos
         step_mag = float(np.linalg.norm(step))
@@ -101,6 +115,7 @@ class DisplacementTracker:
 
         self.positions.append(pos.copy())
         self.displacement_mags.append(step_mag)
+        self.step_speeds.append(step_mag / max(dt, 1e-6))
         self.cumulative_dists.append(self._cum_dist)
         self.net_displacements.append(net_mag)
 
@@ -118,13 +133,13 @@ class DisplacementTracker:
         }
 
     def summary(self) -> dict:
-        mags = np.array(self.displacement_mags)
+        speeds = np.array(self.step_speeds)
         return {
             "total_frames":         self._frame_count,
             "total_path_length":    self._cum_dist,
             "final_net_magnitude":  self.net_displacements[-1] if self.net_displacements else 0.0,
-            "mean_speed":           float(np.mean(mags)) if len(mags) else 0.0,
-            "max_speed":            float(np.max(mags))  if len(mags) else 0.0,
+            "mean_speed":           float(np.mean(speeds)) if len(speeds) else 0.0,   # [m/s]
+            "max_speed":            float(np.max(speeds))  if len(speeds) else 0.0,   # [m/s]
             "linearity_ratio":      (self.net_displacements[-1] / self._cum_dist
                                      if self._cum_dist > 1e-9 else 1.0),
         }
@@ -148,6 +163,9 @@ class EMASmoothing:
             self.smoothed = self.alpha * value + (1 - self.alpha) * self.smoothed
         return self.smoothed.copy()
 
+    def reset(self) -> None:
+        self.smoothed = None
+
 
 def smooth_trajectory(traj: np.ndarray, window: int = 11, poly: int = 3) -> np.ndarray:
     """Apply Savitzky-Golay smoothing to an (N, 3) trajectory array."""
@@ -167,7 +185,10 @@ def smooth_trajectory(traj: np.ndarray, window: int = 11, poly: int = 3) -> np.n
 # =============================================================================
 
 def rotation_matrix_to_euler(R: np.ndarray) -> np.ndarray:
-    """Return [roll, pitch, yaw] in degrees from a 3×3 rotation matrix."""
+    """Return [roll, pitch, yaw] in degrees from a 3×3 rotation matrix.
+
+    Assumes a Z-up frame (ZYX order): yaw is heading about Z.
+    """
     sy = math.sqrt(R[0, 0] ** 2 + R[1, 0] ** 2)
     singular = sy < 1e-6
     if not singular:
@@ -218,10 +239,10 @@ class LivePlotter:
             ax.view_init(elev=20, azim=45)
             _set_3d_equal(ax, traj_d)
         else:
-            ax.plot(traj_d[:, 0], traj_d[:, 2], "-b", linewidth=2)
-            ax.scatter(*traj_d[0, [0, 2]],  c="g", s=60, label="Start")
-            ax.scatter(*traj_d[-1, [0, 2]], c="r", s=60, label="Now")
-            ax.set_xlabel("X (m)"); ax.set_ylabel("Z (m)")
+            ax.plot(traj_d[:, 0], traj_d[:, 1], "-b", linewidth=2)
+            ax.scatter(*traj_d[0, [0, 1]],  c="g", s=60, label="Start")
+            ax.scatter(*traj_d[-1, [0, 1]], c="r", s=60, label="Now")
+            ax.set_xlabel("X (m)"); ax.set_ylabel("Y (m)")
             ax.set_title(f"ZED SLAM  |  Frame {frame_idx}  |  Net {net_dist:.2f} m")
             ax.axis("equal")
 
@@ -296,22 +317,22 @@ def save_analysis_plots(tracker: DisplacementTracker,
     ax4.set_title("Linearity Ratio"); ax4.set_xlabel("Frame"); ax4.set_ylabel("ratio")
     ax4.grid(True, alpha=0.3)
 
-    # 5. XZ top-down trajectory
+    # 5. XY top-down trajectory
     ax5 = axes[1, 1]
-    ax5.plot(traj[:, 0],   traj[:, 2],   "-b", linewidth=1,   alpha=0.25, label="Raw")
-    ax5.plot(traj_s[:, 0], traj_s[:, 2], "-b", linewidth=2.5,             label="Smoothed")
-    ax5.scatter(traj_s[0, 0],  traj_s[0, 2],  c="g", s=80, zorder=5)
-    ax5.scatter(traj_s[-1, 0], traj_s[-1, 2], c="r", s=80, zorder=5)
-    ax5.set_title("Top-Down (X–Z)"); ax5.set_xlabel("X (m)"); ax5.set_ylabel("Z (m)")
+    ax5.plot(traj[:, 0],   traj[:, 1],   "-b", linewidth=1,   alpha=0.25, label="Raw")
+    ax5.plot(traj_s[:, 0], traj_s[:, 1], "-b", linewidth=2.5,             label="Smoothed")
+    ax5.scatter(traj_s[0, 0],  traj_s[0, 1],  c="g", s=80, zorder=5)
+    ax5.scatter(traj_s[-1, 0], traj_s[-1, 1], c="r", s=80, zorder=5)
+    ax5.set_title("Top-Down (X–Y)"); ax5.set_xlabel("X (m)"); ax5.set_ylabel("Y (m)")
     ax5.legend(); ax5.axis("equal"); ax5.grid(True, alpha=0.3)
 
-    # 6. Height (Y) over time
+    # 6. Height (Z) over time
     ax6 = axes[1, 2]
-    ax6.plot(time_axis, traj[:, 1],   color="green", alpha=0.2, linewidth=1)
-    ax6.plot(time_axis, traj_s[:, 1], color="green", linewidth=2)
+    ax6.plot(time_axis, traj[:, 2],   color="green", alpha=0.2, linewidth=1)
+    ax6.plot(time_axis, traj_s[:, 2], color="green", linewidth=2)
     ax6.axhline(0, color="black", linewidth=0.5, linestyle="--")
-    ax6.fill_between(time_axis, traj_s[:, 1], alpha=0.2, color="green")
-    ax6.set_title("Height (Y) Over Time"); ax6.set_xlabel("Frame"); ax6.set_ylabel("m")
+    ax6.fill_between(time_axis, traj_s[:, 2], alpha=0.2, color="green")
+    ax6.set_title("Height (Z) Over Time"); ax6.set_xlabel("Frame"); ax6.set_ylabel("m")
     ax6.grid(True, alpha=0.3)
 
     plt.tight_layout()
@@ -333,12 +354,12 @@ def save_analysis_plots(tracker: DisplacementTracker,
         _set_3d_equal(ax7, traj_s)
     else:
         ax7 = fig2.add_subplot(111)
-        ax7.plot(traj[:, 0],   traj[:, 2],   "-b", linewidth=1, alpha=0.25, label="Raw")
-        ax7.plot(traj_s[:, 0], traj_s[:, 2], "-b", linewidth=2.5,           label="Smoothed")
-        ax7.scatter(traj_s[0, 0],  traj_s[0, 2],  c="g", s=100)
-        ax7.scatter(traj_s[-1, 0], traj_s[-1, 2], c="r", s=100)
-        ax7.set_xlabel("X (m)"); ax7.set_ylabel("Z (m)")
-        ax7.set_title("Final Trajectory (X–Z)"); ax7.axis("equal"); ax7.grid(True, alpha=0.3)
+        ax7.plot(traj[:, 0],   traj[:, 1],   "-b", linewidth=1, alpha=0.25, label="Raw")
+        ax7.plot(traj_s[:, 0], traj_s[:, 1], "-b", linewidth=2.5,           label="Smoothed")
+        ax7.scatter(traj_s[0, 0],  traj_s[0, 1],  c="g", s=100)
+        ax7.scatter(traj_s[-1, 0], traj_s[-1, 1], c="r", s=100)
+        ax7.set_xlabel("X (m)"); ax7.set_ylabel("Y (m)")
+        ax7.set_title("Final Trajectory (X–Y)"); ax7.axis("equal"); ax7.grid(True, alpha=0.3)
 
     plt.savefig("zed_trajectory_plot.png", dpi=150, bbox_inches="tight")
     print("Saved: zed_trajectory_plot.png")
