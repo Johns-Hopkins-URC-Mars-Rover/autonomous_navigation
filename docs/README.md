@@ -12,11 +12,11 @@ The target runtime is Ubuntu 24.04 with ROS 2 Jazzy. Ubuntu 20.04/Foxy is not a 
 
 All branches start from `main` after the documentation commit.
 
-| Person | Branch | Primary package area | May proceed independently with |
-|---|---|---|---|
-| Hedgie | `hedgie-slam-research` | offline visual SLAM and semantic mapping | recorded SVO/extracted session folders |
-| Wobbles | `wobbles-sensor-localization` | ZED/IMU/GPS and localization data contract | live camera or an SVO; no Nav2 dependency |
-| Bedrawn | `bedrawn-nav-integration` | maps, costmaps, Nav2, simulation/replay | synthetic ROS bags or Wobbles bags when available |
+| Person  | Branch                          | Primary package area                       | May proceed independently with                    |
+| ------- | ------------------------------- | ------------------------------------------ | ------------------------------------------------- |
+| Hedgie  | `hedgie-slam-research`        | offline visual SLAM and semantic mapping   | recorded SVO/extracted session folders            |
+| Wobbles | `wobbles-sensor-localization` | ZED/IMU/GPS and localization data contract | live camera or an SVO; no Nav2 dependency         |
+| Bedrawn | `bedrawn-nav-integration`     | maps, costmaps, Nav2, simulation/replay    | synthetic ROS bags or Wobbles bags when available |
 
 Read the person-specific plans before editing. A merge is not required for another workstream to begin.
 
