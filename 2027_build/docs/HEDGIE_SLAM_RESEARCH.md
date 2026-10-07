@@ -114,6 +114,15 @@ Create new code only under `2027_build/src/rover_camera_ai/` or an equivalent re
 
 Hedgie may factor reusable, camera-independent detector utilities out of `object_detection.py` into the new package. Do not change `main.py` to run the research pipeline live and do not introduce a dependency on a live ZED or Nav2 while establishing the offline benchmark.
 
+## Reference docs: what to use and when
+
+- [ZED SVO recording and replay](https://docs.stereolabs.com/docs/recording/): consult when writing the session reader. Confirm exactly which data can be replayed through the SDK and which metadata must be preserved separately.
+- [ZED camera calibration](https://www.stereolabs.com/docs/camera-calibration/): consult before back-projecting depth pixels; verify intrinsics, resolution dependence, and the coordinate convention rather than copying constants.
+- [ZED positional tracking](https://www.stereolabs.com/docs/positional-tracking/): use it to interpret the supplied ZED trajectory, area-map relocalization, and tracking-state gaps. It provides the baseline to beat, not ground truth.
+- [evo trajectory-format documentation](https://github.com/MichaelGrupp/evo/wiki/Formats#tum---tum-rgb-d-dataset-trajectory-format): use it when reading/writing the repository's TUM trajectory. Check timestamp units, quaternion ordering, and frame alignment before comparing trajectories.
+- [OpenCV camera calibration and 3D reconstruction documentation](https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html): use it for geometric verification, projection/back-projection, epipolar constraints, and pose estimation. Do not add a learned matcher before understanding the geometric checks it still needs.
+- [Open3D documentation](https://www.open3d.org/docs/release/): optional but useful for point-cloud visualization, registration, and map review after the file-format/geometry baseline works.
+
 ## First independent milestone
 
 Given one session folder, generate a validated baseline report, render the ZED trajectory, produce a depth-back-projected point cloud, and save a reviewable BEV occupancy/confidence image. This does not require anyone else's branch to merge.

@@ -8,6 +8,20 @@ New to this project? Read `FOUNDATIONS.md` first. It explains, in plain language
 
 Then read this file, your person-specific plan, and finally `DOCS.md` for the detailed legacy implementation reference.
 
+## At a glance: who does what, and where data comes from
+
+![Workstream pipeline: inputs, outputs, and sync points for Hedgie, Wobbles and Bedrawn](pipeline.svg)
+
+Open [pipeline.svg](pipeline.svg) directly in any browser or editor for full size; it is a self-contained file and works offline.
+
+How to read it:
+
+- **Lanes** are people. **Columns** are phases (camera-only, then IMU, then GPS); dashed boxes are later phases.
+- Every box lists its **IN** and **OUT**. The colored chip says where the input comes from: **red = live hardware**, **green = recorded files/replay**, **grey = synthetic or fixture**, **brown = measured by hand**.
+- Wobbles is the data hub. Its **session folder** feeds Hedgie, and its **ROS topics/bag replay** feed Bedrawn. Until those exist, Hedgie uses a fixture and Bedrawn uses synthetic messages, so nobody is blocked.
+- The only Hedgie → Bedrawn link is the optional offline map export (dashed purple).
+- The bottom of the diagram lists the five points where all three must sync, and the TF rule (one publisher per arrow).
+
 ## Baseline
 
 `main.py` already opens the ZED, retrieves RGB and depth, runs ZED positional tracking with IMU fusion, records SVO, writes a TUM trajectory, persists a ZED area map, and runs YOLO plus depth heuristics. It does **not** yet publish ROS 2 messages, create Nav2 maps/costmaps, or provide GPS localization.
@@ -90,8 +104,12 @@ Every recorded session should ultimately have a stable identifier and this minim
 
 The schema may be drafted independently, but Wobbles owns its final live-data implementation. Hedgie can use a synthetic or hand-authored manifest while waiting.
 
-## References
+## Reference docs: what to use and when
 
-- ZED ROS 2 wrapper: RGB/depth/point clouds, IMU, VIO, positional tracking, SVO replay, and diagnostics.
-- Nav2: `slam_toolbox` is the initial 2D SLAM baseline; static, obstacle/voxel, and inflation layers are the initial costmap baseline.
-- GPS is a later global-localization stage; Nav2 expects the `map -> odom -> base_link` TF chain.
+- [ZED ROS 2 overview](https://docs.stereolabs.com/docs/integrations/ros-2): start here for the supported Ubuntu 24.04/Jazzy path, wrapper packages, SVO replay, diagnostics, and the available RGB/depth/point-cloud/IMU/VIO outputs.
+- [ZED robot integration](https://docs.stereolabs.com/docs/integrations/ros-2/robot-integration): consult before defining the rover URDF or choosing how ZED positional tracking coexists with other localization sources.
+- [ZED positional tracking in ROS 2](https://docs.stereolabs.com/docs/integrations/ros-2/positional-tracking): use it to understand the difference between `odom`, globally corrected `pose`, paths, tracking confidence, and area-map relocalization.
+- [Nav2 first-time robot setup](https://docs.nav2.org/rolling/configuration_and_development/first_time_robot_setup_guide/): consult before adding navigation packages; it orders the prerequisites as transforms, URDF, odometry, sensors, mapping/localization, footprint, then navigation plugins.
+- [Nav2 mapping and localization](https://docs.nav2.org/rolling/configuration_and_development/first_time_robot_setup_guide/sensors/mapping_localization/): use it for the initial `slam_toolbox`/costmap model, not as a drop-in parameter file.
+- [Nav2 navigation plugins](https://docs.nav2.org/rolling/configuration_and_development/navigation_plugins/): use this as a catalog after the basic stack works. It helps decide whether a standard planner/controller/layer already solves a need; it is not a reason to write custom plugins first.
+- [Nav2 GPS localization](https://docs.nav2.org/rolling/tutorials/general_tutorials/navigation2_with_gps/navigation2_with_gps/): use only for the GPS stage. Focus on TF ownership, uncertainty, heading, and the role of `navsat_transform`.

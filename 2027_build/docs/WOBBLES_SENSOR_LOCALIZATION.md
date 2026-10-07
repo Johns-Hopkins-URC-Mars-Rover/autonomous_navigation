@@ -66,6 +66,16 @@ Create `2027_build/src/rover_localization/` and `2027_build/src/rover_bringup/` 
 
 The existing `main.py` may receive narrowly scoped export improvements: timestamped IMU CSV, tracking status/confidence, calibration JSON, and explicit tracking-gap records. Preserve its current standalone behavior.
 
+## Reference docs: what to use and when
+
+- [ZED ROS 2 overview](https://docs.stereolabs.com/docs/integrations/ros-2): start here for the Jazzy installation/build path, wrapper packages, SVO replay, and the camera data products that can be published.
+- [ZED Stereo Node topic reference](https://docs.stereolabs.com/docs/integrations/ros-2/zed-stereo-node): use it to confirm exact topic names, message types, frames, and publication settings instead of guessing from examples.
+- [ZED positional tracking in ROS 2](https://docs.stereolabs.com/docs/integrations/ros-2/positional-tracking): use this before configuring tracking, `odom`, `pose`, tracking confidence, area maps, or `map -> odom` behavior.
+- [ZED robot integration](https://docs.stereolabs.com/docs/integrations/ros-2/robot-integration): use it while creating the rover URDF/xacro and deciding whether ZED tracking or an external filter owns a transform.
+- [ZED Geo Tracking](https://docs.stereolabs.com/docs/integrations/ros-2/geo-tracking): read only in the GPS stage. It explains the accepted `NavSatFix` input and the ZED GNSS-fusion results.
+- [ROS 2 rosbag2 documentation](https://docs.ros.org/en/jazzy/Tutorials/Beginner-CLI-Tools/Recording-And-Playing-Back-Data.html): use it to record/replay the ROS message evidence that complements an SVO.
+- [Nav2 GPS localization](https://docs.nav2.org/rolling/tutorials/general_tutorials/navigation2_with_gps/navigation2_with_gps/): use it to compare ZED GNSS fusion with `robot_localization` plus `navsat_transform`; pay special attention to covariance, heading, and the single-owner TF rule.
+
 ## Acceptance checks
 
 - No TF edge has more than one publisher.

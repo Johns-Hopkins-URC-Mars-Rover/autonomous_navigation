@@ -67,6 +67,16 @@ Create `2027_build/src/rover_navigation/` and add configuration under `2027_buil
 
 Do not modify ZED camera acquisition in `main.py`. Consume standard ROS messages from Wobbles's contract. Do not implement a custom planner, controller, behavior tree, or costmap plugin unless standard layers fail against documented requirements.
 
+## Reference docs: what to use and when
+
+- [Nav2 first-time robot setup](https://docs.nav2.org/rolling/configuration_and_development/first_time_robot_setup_guide/): read in its stated order before writing Nav2 parameters: transforms, URDF, odometry, sensors, mapping/localization, footprint, then plugins.
+- [Nav2 mapping and localization](https://docs.nav2.org/rolling/configuration_and_development/first_time_robot_setup_guide/sensors/mapping_localization/): use it to understand what `slam_toolbox` supplies, why its `map -> odom` ownership matters, and how static/obstacle/voxel/inflation layers fit together.
+- [SLAM Toolbox repository](https://github.com/SteveMacenski/slam_toolbox): use it for supported configuration parameters and lifecycle/mapping behavior after the synthetic-scan baseline exists.
+- [Nav2 costmap configuration](https://docs.nav2.org/configuration/packages/configuring-costmaps.html): use it to configure obstacle sources, clearing/marking, resolution, rolling windows, voxel behavior, and inflation. Do not infer safety values from tutorial defaults.
+- [Nav2 plugin catalog](https://docs.nav2.org/rolling/configuration_and_development/navigation_plugins/): consult after standard costmaps work to select existing planner/controller plugins. It is a comparison/reference list, not a prerequisite to write a plugin.
+- [ZED depth sensing in ROS 2](https://docs.stereolabs.com/docs/integrations/ros-2/depth-sensing): use it when replacing a synthetic obstacle source with registered depth or a point cloud; confirm frame, range, and confidence behavior.
+- [Nav2 GPS localization](https://docs.nav2.org/rolling/tutorials/general_tutorials/navigation2_with_gps/navigation2_with_gps/): use only for the later outdoor GPS stage; protect the agreed TF ownership from global-frame jumps.
+
 ## Acceptance checks
 
 - A valid `map -> odom -> base_link` chain exists, with one publisher per edge.

@@ -29,7 +29,7 @@
 
 ## Read This First
 
-This is the detailed reference for the **existing standalone Python camera prototype**. Read `docs/FOUNDATIONS.md` first if terms such as VIO, TUM trajectory, area map, TF, occupancy grid, or Nav2 are new.
+This is the detailed reference for the **existing standalone Python camera prototype**. Read `2027_build/docs/FOUNDATIONS.md` first if terms such as VIO, TUM trajectory, area map, TF, occupancy grid, or Nav2 are new.
 
 In plain language, the current program can watch through a ZED camera, estimate the camera's movement, use the camera IMU to help that estimate, save a replayable ZED recording, save the estimated path, and draw object/depth hints. That is a strong perception/localization baseline. It is **not** yet a complete autonomous-navigation system: it does not publish ROS 2 topics, produce a Nav2 occupancy map/costmap, plan a route, command motors, or establish GPS localization.
 
@@ -39,6 +39,15 @@ Read this document in this order:
 2. Quick Start and Outputs: how to run/replay it and what files it creates.
 3. Coordinate System and Limitations: what the numbers mean and when not to trust them.
 4. Module Reference and Configuration: implementation detail only when changing code.
+
+### External references to open when needed
+
+- [ZED SDK Python documentation](https://www.stereolabs.com/docs/api/python/): check exact `pyzed.sl` API names, supported camera models, coordinate systems, and recording/positional-tracking behavior before changing camera calls.
+- [ZED positional tracking documentation](https://www.stereolabs.com/docs/positional-tracking/): use this when interpreting tracking state, area maps, relocalization, loop closure, and coordinate-frame behavior.
+- [ZED sensor/IMU documentation](https://www.stereolabs.com/docs/sensors/): use this before changing IMU timing, units, or sensor-frame assumptions.
+- [ZED recording documentation](https://www.stereolabs.com/docs/recording/): use this when deciding what an SVO contains and how a replay differs from a live session.
+
+For ROS 2, Nav2, mapping, or GPS work, do not extend this legacy program first. Follow the references in `2027_build/docs/README.md` and use the new workspace instead.
 
 ## Overview
 

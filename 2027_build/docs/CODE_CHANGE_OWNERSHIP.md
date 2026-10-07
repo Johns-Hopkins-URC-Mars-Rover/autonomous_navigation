@@ -45,3 +45,11 @@ Wobbles will stabilize the live/replay sensor contract. Bedrawn may develop agai
 2. Hedgie factors camera-independent detection helpers only when tests prove `object_detection.py` behavior is preserved.
 3. Bedrawn does not couple Nav2 to the root-level Python loop; it uses ROS messages and launch/config overlays.
 4. Any common `2027_build` skeleton change should be a small reviewed PR from `main`, then rebased/cherry-picked by the three branches.
+
+## Reference docs before cross-workstream changes
+
+- Read `FOUNDATIONS.md` before changing a frame, map, trajectory, area-map, or navigation claim; it defines the shared vocabulary and limits.
+- Read `README.md` before adding a ROS package, because it states the target workspace layout, build order, and TF ownership rule.
+- For a live-data change, defer to `WOBBLES_SENSOR_LOCALIZATION.md` and the official ZED ROS 2 topic/robot-integration references it links.
+- For an offline SLAM/map export change, defer to `HEDGIE_SLAM_RESEARCH.md` and its calibration/trajectory-format references.
+- For a Nav2 map/costmap change, defer to `BEDRAWN_NAVIGATION.md` and its Nav2 costmap/SLAM Toolbox references.
