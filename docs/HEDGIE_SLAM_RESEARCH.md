@@ -2,6 +2,14 @@
 
 Branch: `hedgie-slam-research`
 
+## Start here: the simple version
+
+Hedgie receives recordings after someone else captures them. The job is to answer: **“Can we turn these camera/depth recordings into a more accurate, better explained map and trajectory than the raw ZED baseline?”**
+
+This is not live camera setup or ROS plumbing. It is computer vision research using files: images, depth maps, camera calibration, and an initial ZED trajectory. The work begins with a dependable measurement baseline, then progresses to feature matching, loop closure, pose-graph optimization, dense maps, and semantic/dynamic-scene filtering.
+
+Read `FOUNDATIONS.md` first, then the Inputs section below. Do not start with learned models; first make the ZED-baseline experiment reproduce from one session folder.
+
 ## Mission
 
 Create the research-grade, camera-data-driven part of the project: an offline visual SLAM and semantic mapping pipeline that is quantitatively compared to the existing ZED trajectory baseline. This work must be useful even before live ROS 2 integration is complete.
@@ -24,6 +32,16 @@ session/
 ```
 
 Build loaders so the analysis can run from extracted files, not only from a live camera. If real recordings are unavailable, use a public RGB-D dataset or synthetic sequence strictly as a development fixture and label it as such.
+
+### Vocabulary before implementation
+
+- **Intrinsics:** the camera's focal length and optical center; needed to turn depth pixels into 3D points.
+- **Trajectory:** the estimated camera path over time.
+- **Feature match:** evidence that a visual point in one frame is the same physical point in another frame.
+- **Loop closure:** evidence that the rover has returned to a previously seen place; it corrects accumulated drift.
+- **Pose graph:** a network of poses and motion/loop constraints optimized together to make the path globally consistent.
+- **Dense map:** many 3D points, rather than only sparse visual features.
+- **BEV occupancy:** a top-down grid whose cells mean free, occupied, unknown, and optionally uncertain.
 
 ## Deliverables
 

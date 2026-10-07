@@ -2,6 +2,21 @@
 
 Branch: `wobbles-sensor-localization`
 
+## Start here: the simple version
+
+Wobbles makes the rover's sensor data trustworthy. The first question is: **“When the camera says it moved, what exactly moved, in which coordinate frame, at what time, and can we replay the evidence?”**
+
+Work in strict order: camera-only first, then IMU, then GPS. GPS is deliberately last because it is a slow/noisy global correction, not a replacement for local camera motion. Read `FOUNDATIONS.md` before this plan; its TF diagram is the contract this work protects.
+
+### Vocabulary before implementation
+
+- **Frame:** a named coordinate system attached to the map, rover body, camera, or IMU.
+- **TF:** ROS 2's time-aware record of how frames relate. For example, a fixed `base_link -> camera_link` transform says where the camera is bolted onto the rover.
+- **Odometry:** smooth short-term motion estimate. It drifts over time.
+- **Localization:** a global correction that says where the rover is in a known map/world.
+- **Covariance:** the sensor's stated uncertainty; a GPS fix without meaningful covariance is not enough for safe fusion.
+- **rosbag2 / SVO:** recordings for ROS messages / ZED camera data respectively. Keep both when possible because they serve different replay needs.
+
 ## Mission
 
 Make sensor data reliable, time-aware, replayable, and correctly framed. Build the path from camera-only localization to IMU-assisted localization and finally GPS-supported outdoor global localization.

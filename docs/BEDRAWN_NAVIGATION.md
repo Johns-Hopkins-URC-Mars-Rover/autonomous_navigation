@@ -2,6 +2,21 @@
 
 Branch: `bedrawn-nav-integration`
 
+## Start here: the simple version
+
+Bedrawn turns sensor observations into the representations Nav2 needs to make a safe plan. The first question is: **“Which nearby places are free, blocked, or unknown, and where is the rover on that representation?”**
+
+Begin with simulation or replay and ordinary Nav2 components. Do not begin by writing a planner/plugin or commanding motors. Read `FOUNDATIONS.md`, especially the distinction between mapping and navigation, before reading the technical scope below.
+
+### Vocabulary before implementation
+
+- **Occupancy grid/map:** a top-down grid in which each cell represents free, occupied, or unknown space.
+- **Costmap:** Nav2's local or global map of how undesirable each cell is. Obstacles are expensive/lethal; inflation adds a safety buffer around them.
+- **Local costmap:** a moving, short-range safety view around the rover.
+- **Global costmap:** the larger planning view, usually tied to a saved map.
+- **`LaserScan` / `PointCloud2`:** standard ROS messages carrying 2D ranges / 3D points. Bedrawn may develop against synthetic examples first.
+- **SLAM Toolbox:** a ROS 2 component that can create a 2D occupancy map and provide the map-to-odometry correction for a compatible laser-scan input.
+
 ## Mission
 
 Create a safe, replayable navigation-facing stack from camera-derived environment information. Start with standard Nav2 components and configuration; custom plugins are a later decision, not the starting point.

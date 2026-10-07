@@ -2,12 +2,22 @@
 
 This plan keeps three branches productive before hardware, ROS 2, or one another's work is ready.
 
-| Area | Owner | Branch | Merge dependency |
-|---|---|---|---|
-| Offline visual SLAM, loop closure, semantic/dense maps, metrics | Hedgie | `hedgie-slam-research` | None; uses session fixture or recordings |
-| ZED wrapper, TF/URDF, recording, IMU/GPS, localization logs | Wobbles | `wobbles-sensor-localization` | None; live data or SVO only |
-| Depth/scan adapters, SLAM Toolbox, Nav2 costmaps, replay/simulation | Bedrawn | `bedrawn-nav-integration` | None; synthetic source first |
-| Legacy standalone ZED pipeline | Shared, narrow edits only | `main` via reviewed PR | No ROS rewrite |
+## Read this before changing code
+
+The goal is independent progress without incompatible assumptions. Each person owns a different answer:
+
+- Hedgie: “What can we learn from recorded RGB-D data to make the trajectory/map better?”
+- Wobbles: “Can we trust, replay, and correctly frame the live camera/IMU/GPS data?”
+- Bedrawn: “Can Nav2 consume safe map/obstacle/localization outputs in replay or simulation?”
+
+The root-level Python files are the existing prototype. New ROS 2 Jazzy code belongs in `2027_build/`; do not move or rewrite the prototype merely to make the folders look uniform.
+
+| Area                                                                | Owner                     | Branch                          | Merge dependency                         |
+| ------------------------------------------------------------------- | ------------------------- | ------------------------------- | ---------------------------------------- |
+| Offline visual SLAM, loop closure, semantic/dense maps, metrics     | Hedgie                    | `hedgie-slam-research`        | None; uses session fixture or recordings |
+| ZED wrapper, TF/URDF, recording, IMU/GPS, localization logs         | Wobbles                   | `wobbles-sensor-localization` | None; live data or SVO only              |
+| Depth/scan adapters, SLAM Toolbox, Nav2 costmaps, replay/simulation | Bedrawn                   | `bedrawn-nav-integration`     | None; synthetic source first             |
+| Legacy standalone ZED pipeline                                      | Shared, narrow edits only | `main` via reviewed PR        | No ROS rewrite                           |
 
 ## Boundary rules
 
@@ -22,12 +32,12 @@ This plan keeps three branches productive before hardware, ROS 2, or one another
 
 Wobbles will stabilize the live/replay sensor contract. Bedrawn may develop against synthetic data until then. Hedgie reads file-based sessions and therefore remains independent.
 
-| Contract | Producer | Consumers | Minimum fields |
-|---|---|---|---|
-| Session manifest | Wobbles | Hedgie, Bedrawn | calibration, frames, timestamps, checksums, route metadata |
-| Offline map export | Hedgie | Bedrawn | frame, resolution, occupancy/confidence, provenance |
-| Sensor topics/TF | Wobbles | Bedrawn | standard message type, topic, frame id, rate, QoS |
-| Obstacle representation | Bedrawn initially; Hedgie optionally later | Nav2 | source frame, timestamp, confidence, clearing semantics |
+| Contract                | Producer  | Consumers       | Minimum fields                                             |
+| ----------------------- | --------- | --------------- | ---------------------------------------------------------- |
+| Session manifest        | Wobbles   | Hedgie, Bedrawn | calibration, frames, timestamps, checksums, route metadata |
+| Offline map export      | Hedgie    | Bedrawn         | frame, resolution, occupancy/confidence, provenance        |
+| Sensor topics/TF        | Wobbles   | Bedrawn         | standard message type, topic, frame id, rate, QoS          |
+| Obstacle representation | All later | Nav2            | source frame, timestamp, confidence, clearing semantics    |
 
 ## Existing-code edit sequencing
 

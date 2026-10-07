@@ -4,37 +4,58 @@
 
 ## Table of Contents
 
-1. [Overview](#overview)
-2. [Project Structure](#project-structure)
-3. [Architecture](#architecture)
-4. [Installation & Dependencies](#installation--dependencies)
-5. [Quick Start](#quick-start)
-6. [CLI Reference — `main.py`](#cli-reference--mainpy)
-7. [Module Reference](#module-reference)
+1. [Read This First](#read-this-first)
+2. [Overview](#overview)
+3. [Project Structure](#project-structure)
+4. [Architecture](#architecture)
+5. [Installation & Dependencies](#installation--dependencies)
+6. [Quick Start](#quick-start)
+7. [CLI Reference — `main.py`](#cli-reference--mainpy)
+8. [Module Reference](#module-reference)
    - [main.py](#mainpy)
    - [object_detection.py](#object_detectionpy)
    - [slam/zed_vo_core.py](#slamzed_vo_corepy)
    - [slam/zed_scene_core.py](#slamzed_scene_corepy)
-8. [Data Structures](#data-structures)
-9. [Configuration & Tuning](#configuration--tuning)
-10. [Outputs & Saved Files](#outputs--saved-files)
-11. [Display Window Layout](#display-window-layout)
-12. [Coordinate System](#coordinate-system)
-13. [Platform Notes (Jetson / Headless)](#platform-notes-jetson--headless)
-14. [Standalone Modes](#standalone-modes)
-15. [Limitations](#limitations)
+9. [Data Structures](#data-structures)
+10. [Configuration & Tuning](#configuration--tuning)
+11. [Outputs & Saved Files](#outputs--saved-files)
+12. [Display Window Layout](#display-window-layout)
+13. [Coordinate System](#coordinate-system)
+14. [Platform Notes (Jetson / Headless)](#platform-notes-jetson--headless)
+15. [Standalone Modes](#standalone-modes)
+16. [Limitations](#limitations)
 
 ---
+
+## Read This First
+
+This is the detailed reference for the **existing standalone Python camera prototype**. Read `docs/FOUNDATIONS.md` first if terms such as VIO, TUM trajectory, area map, TF, occupancy grid, or Nav2 are new.
+
+In plain language, the current program can watch through a ZED camera, estimate the camera's movement, use the camera IMU to help that estimate, save a replayable ZED recording, save the estimated path, and draw object/depth hints. That is a strong perception/localization baseline. It is **not** yet a complete autonomous-navigation system: it does not publish ROS 2 topics, produce a Nav2 occupancy map/costmap, plan a route, command motors, or establish GPS localization.
+
+Read this document in this order:
+
+1. Overview and Architecture: what runs once per camera frame.
+2. Quick Start and Outputs: how to run/replay it and what files it creates.
+3. Coordinate System and Limitations: what the numbers mean and when not to trust them.
+4. Module Reference and Configuration: implementation detail only when changing code.
 
 ## Overview
 
 This pipeline fuses three capabilities into a single, real-time loop driven by a Stereolabs ZED stereo camera:
 
-- **Visual Odometry (VO)** — 6-DoF pose tracking with optional IMU fusion, metric velocity, cumulative path length, and post-session trajectory analysis.
+- **Visual Odometry (VO)** — ZED estimates the camera's 6-DoF pose (position plus orientation) from images; on IMU-equipped cameras it also fuses accelerometer/gyroscope information. This is local motion estimation, not a guaranteed global map.
 - **Scene Understanding** — wall/hallway detection via depth-grid variance voting, forward line-of-sight probing, and morphological object clustering.
 - **Object Detection** — YOLOv8 model inference on each camera frame; detected targets get labelled bounding boxes and distance estimates from the depth map, rendered alongside the scene and VO overlays.
 
 All three share a single `sl.Camera` handle and a single `zed.grab()` call per frame. The ZED SDK, VO math, scene analysis, and YOLO inference are cleanly separated so each module can be tested or replaced independently.
+
+### What the saved artifacts mean
+
+- **SVO:** replayable ZED camera recording; use it to reproduce camera-side behavior without hardware.
+- **TUM trajectory:** timestamped pose estimate used by trajectory tools. It is a baseline estimate, not ground truth.
+- **ZED area map:** private ZED visual-memory data that helps the ZED tracker revisit a prior area. It is not a Nav2 2D occupancy map.
+- **YOLO/depth result:** a perception hint. It does not itself stop the rover or create an obstacle costmap.
 
 ---
 

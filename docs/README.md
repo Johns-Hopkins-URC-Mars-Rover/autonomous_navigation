@@ -2,11 +2,27 @@
 
 This folder is the planning contract for the Ubuntu 24.04 / ROS 2 Jazzy build. The existing top-level Python pipeline remains a standalone ZED prototype and is not the ROS 2 navigation stack.
 
+## Start here
+
+New to this project? Read `FOUNDATIONS.md` first. It explains, in plain language, what the current ZED prototype does, what its outputs mean, why a ZED area map is not yet a Nav2 map, and why `2027_build/` belongs at the repository root.
+
+Then read this file, your person-specific plan, and finally `DOCS.md` for the detailed legacy implementation reference.
+
 ## Baseline
 
 `main.py` already opens the ZED, retrieves RGB and depth, runs ZED positional tracking with IMU fusion, records SVO, writes a TUM trajectory, persists a ZED area map, and runs YOLO plus depth heuristics. It does **not** yet publish ROS 2 messages, create Nav2 maps/costmaps, or provide GPS localization.
 
 The target runtime is Ubuntu 24.04 with ROS 2 Jazzy. Ubuntu 20.04/Foxy is not a target. Hardware compatibility, NVIDIA driver/CUDA, the ZED SDK, and the current ZED ROS 2 wrapper must be verified together before live deployment.
+
+### The simple mental model
+
+The old program is one camera application. The new build is a ROS 2 workspace that lets independent components exchange standardized data:
+
+```text
+camera data -> localization/map/perception outputs -> Nav2 -> future motor interface
+```
+
+The 2027 build does **not** throw away the old program. It keeps it as a replayable baseline while the ROS 2 workspace grows beside it.
 
 ## Local branch baseline
 
@@ -44,7 +60,7 @@ No live motor command is an acceptance criterion for this repository. First prov
 
 ## 2027 workspace target
 
-Implementation branches may add the following workspace without modifying the legacy pipeline:
+`2027_build/` should be a **new directory at the repository root**. Implementation branches may add this workspace without modifying the legacy pipeline:
 
 ```text
 2027_build/
@@ -58,6 +74,8 @@ Implementation branches may add the following workspace without modifying the le
 ```
 
 Package names must remain valid ROS 2 names; `2027_build` is only a directory name.
+
+The generated ROS directories `2027_build/build/`, `2027_build/install/`, and `2027_build/log/` must stay out of Git. Only source, configuration, tests, and small reproducible fixtures belong in the repository.
 
 ## Shared data handoff
 
