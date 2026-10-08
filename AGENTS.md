@@ -31,6 +31,37 @@ Before you say a visual is finished, every line must be true:
 - [ ] There is a legend or "how to read this" if any symbol is not obvious.
 - [ ] The visual is generated from a script or data file that is committed, not hand-edited output.
 - [ ] Every fact on it is traceable to a source in the repo, data, or the user's request. Nothing invented.
+- [ ] It is within the simplicity budget (section 0.1): a newcomer can explain it back after one minute.
+- [ ] I did not drop, merge, or rename a division the user relies on (for example the split by person) unless the user asked me to.
+
+## 0.1 Simplicity budget (default: simple)
+
+**Simple is the default.** A diagram's job is to be understood, not to hold every fact. Dense visuals fail even when every fact is correct, because the reader gives up. Detail belongs in the written docs; the visual shows the shape.
+
+Hard limits for a single overview diagram (go over only when the user explicitly asks for a detailed or exhaustive version):
+
+| Budget | Limit |
+| --- | --- |
+| Distinct boxes | about 15 or fewer |
+| Columns or phases | 4 or 5 |
+| Rows per card | 4 (for example IN, DOES, OUT, NEEDS) |
+| Text per row | one idea, at most 2 wrapped lines (about 12 words) |
+| Section types shown | the 4 that answer the user's question; do not add acceptance checks, exclusions, code paths, legends, contract tables, and rules panels "just in case" |
+| Cross-links | only the links that matter; show them once, in one small strip, not as arrows crossing the grid |
+| Colors | one color per owner or phase, and only the section-chip colors; no per-item tags |
+| Extra panels | at most 1 or 2 short ones (for example "what passes between people" and a one-line rule) |
+
+How to simplify, in order:
+
+1. **Cut to the message.** Remove everything that does not support the one-sentence message.
+2. **Move detail to the docs.** Link to the document that has it. Do not delete the facts from the project, only from the picture.
+3. **Shorten, do not shrink.** Reword to fewer words; never fix density by making text smaller.
+4. **Merge repeats.** If three boxes say the same thing, say it once in a shared box (for example one "Shared preflight" box instead of three).
+5. **Layer.** If the user also wants the detail, make a second, separate diagram ("overview" and "detail") rather than one overloaded one.
+
+**Conflict rule:** the user's latest instruction on level of detail wins over any default here. "More detailed" and "simpler" are both valid requests; follow the most recent one, and when they conflict with something older, say which you followed. Do not keep adding detail because an earlier request asked for it.
+
+**Keep the user's mental model.** If the user's team is organized in a particular way (lanes per person, per team, per phase), keep that split unless told to change it. Put any re-labelling (for example a new name for each person's responsibility) as a small caption under the existing label; do not replace the label. If a source doc changed terminology, reflect it in the caption and ask if the primary labels should change.
 
 ## 1. When to make a visual at all
 
@@ -45,7 +76,7 @@ A visual earns its place only if it shows something prose or a table shows poorl
 
 1. **Write the message.** One sentence: "The reader should conclude ___." Example: "Three people work in parallel and only meet at the integration gate."
 2. **Name the audience and the reading context.** Teammate who knows the project, a newcomer, a reviewer, a slide audience? Printed, on a phone, zoomed in a browser? A newcomer needs more labels and definitions; a slide needs fewer, larger words.
-3. **Inventory the content.** List every entity (boxes, series, nodes), every relationship (arrows, joins), and every attribute you want shown. Pull these from the real source files, not memory. When unsure whether to include something, include it, then decide in step 5 how to make it quiet (smaller, grey, grouped), not whether to delete it. Hiding detail is a hierarchy decision, not a deletion decision, unless the user asked for a simplified version.
+3. **Inventory the content.** List every entity (boxes, series, nodes), every relationship (arrows, joins), and every attribute you want shown. Pull these from the real source files, not memory. Then **cut the list to the simplicity budget** (section 0.1) unless the user asked for exhaustive detail. When the user asked for detail and you are unsure whether to include an item, include it but make it quiet (shorter, grouped, lower in the hierarchy) rather than deleting it. When the user asked for simple, leave it out and keep it in the docs.
 4. **Pick the visual form** using section 3.
 5. **Decide hierarchy.** Choose what is level 1 (title and the main message), level 2 (group labels, box titles), level 3 (body details), level 4 (footnotes, sources). Each level gets one visibly different style (section 5).
 6. **Sketch the layout in words and numbers** (grid, columns, rows, widths) before writing markup (section 4).
@@ -113,8 +144,8 @@ Whitespace is a feature. If everything touches, nothing is readable. But also do
 
 ### 4.5 Do not let the visual get unmanageably huge
 
-- If a single diagram needs more than about 7 columns or about 25 boxes, **split it** into an overview plus detail diagrams, or group items into containers.
-- If the user wants maximum detail in one picture, make it large but structured: clear headers, repeating card layout, consistent sections. Detail is fine; disorder is not.
+- If a single diagram needs more than the budget in section 0.1, **split it** into an overview plus detail diagrams, or group items into containers.
+- If the user explicitly wants maximum detail in one picture, make it large but structured: clear headers, repeating card layout, consistent sections. Detail is fine; disorder is not. A first-time reader should still be able to read just the titles and understand the story.
 
 ## 5. Typography
 
@@ -248,19 +279,18 @@ plt.rcParams.update({
 Structure it as a **swimlane grid**:
 
 - Rows = owners (people, systems, teams). Columns = phases in order. Phase headers across the top, with a number, a short name, and a one-line subtitle.
-- Each cell is a **card** with the same internal sections in the same order. Recommended section set:
-  - **IN**: inputs, each tagged with where it comes from (live hardware, recorded file, synthetic, measured by hand).
-  - **OUT**: outputs, listing real file names, message types, or artifacts.
-  - **DOES**: the main functionality, as ordered steps.
-  - **NEEDS**: dependencies, each tagged with what kind (another person's output, a tool, an earlier phase, a gate).
-  - **DONE**: the acceptance check, the condition under which the box may be called finished.
-  - **NOT**: what the box deliberately does not do.
-  - **CODE**: where the code lives.
-- Show **cross-owner handoffs** in a separate "who hands what to whom" panel with labelled arrows rather than long lines that cross the grid.
-- Show **contracts** (the interface between owners) in a table: name, producer to consumer, minimum fields, when it becomes stable.
-- Include a **legend / how to read** panel near the top.
-- Finish with the **rules that apply everywhere** (safety, scope, ownership) so nobody has to hunt for them.
+- **Keep one lane per person (or owner)**, with the person's name as the main label and their broad responsibility as a small caption beneath it.
+- Work that everyone shares (a preflight, an integration gate, a final conversion step) is **one tall card spanning all lanes**, not three copies.
+- Each per-person cell is a **short card with exactly four labelled rows**, each one line of plain words:
+  - **IN**: what it starts from.
+  - **DOES**: the main functionality.
+  - **OUT**: what it produces.
+  - **NEEDS**: what it depends on (another person's output, an earlier phase, a tool).
+- Show **cross-owner handoffs** once, in one small strip ("Wobbles → Hedgie: session files"), not as long arrows crossing the grid.
+- Add **one footer line** for the boundary (what is out of scope, who takes over) and one for the single rule that must never be broken.
 - Never state exact dates unless the source gives them. Use relative phases and gates.
+
+**Only on explicit request for a detailed version**, add as separate, clearly secondary material: acceptance checks (DONE), exclusions (NOT), code locations (CODE), per-item source tags, a legend, a contracts table, a TF or interface strip, and a rules panel. Put them in a second diagram when possible, so the overview stays simple. The repository's overview, `2027_build/docs/pipeline.svg`, follows the simple form above.
 
 ### 8.2 Architecture / data-flow diagram
 
@@ -319,6 +349,9 @@ If you cannot render at all, say so plainly in your report and list what remains
 - Inventing data, file names, numbers, owners, dates, or acceptance criteria to fill a box. Use the repo's docs as the source; if something is unknown, write "to be decided" or omit it and say so.
 - Text smaller than 11 px, or text that only fits because it is crammed.
 - Walls of unstructured text inside a box. Use labelled sections, short bullets, and rules.
+- Overloading: adding panels, legends, tags, and tables because they are available. If a reader needs a legend to decode the legend, delete things.
+- Replacing the user's established grouping (for example lanes per person) with a different one because a source doc was reworded.
+- Treating an earlier "make it more detailed" as permanent. The latest request on detail level wins.
 - Rainbow color maps, 3D charts, drop shadows, gradients, clip-art style icons.
 - Dual y-axes, truncated bar axes, pie charts with many slices.
 - Meaning carried only by color.
@@ -341,16 +374,25 @@ If you cannot render at all, say so plainly in your report and list what remains
 
 ## 12. Worked mini-example (the thinking, not just the output)
 
-**Request:** "Make the pipeline diagram more detailed: inputs, outputs, main functionality, dependencies."
+This is a real sequence from this repository.
 
-1. *Message:* "Three people build in parallel from day one, hand off through named contracts, and only converge at an integration gate."
-2. *Audience:* teammates and newcomers, viewed zoomed in a browser. So: large canvas, full detail, a legend.
-3. *Inventory:* read every plan doc; list per person per phase: inputs, outputs, steps, dependencies, acceptance checks, exclusions, code locations; list contracts and the TF ownership rule.
-4. *Form:* swimlane grid (people x phases) plus a handoff panel, a contracts table, a TF chain strip, and a rules row.
-5. *Hierarchy:* title, phase headers, card titles, section chips (IN/OUT/...), body bullets, small footnotes.
-6. *Layout:* fixed lane column, fixed content columns, equal gutters, rows sized by tallest card.
-7. *Build:* a generator with content tables and an auto-wrapping card engine.
-8. *Verify:* render, slice, inspect; found the right-most column running off the canvas and lane names rendering black due to a CSS override; fixed both in the generator and re-rendered.
-9. *Document:* regeneration command in the script docstring and docs.
+**Request 1:** "The pipeline SVG is too thin. Add inputs, outputs, main functionality and dependencies. If unsure, include it."
+Result: a very detailed diagram (7 sections per card, legend, contracts table, TF strip, rules panel, about 2480 x 3900 px).
 
-Follow the same arc for any visual.
+**Request 2 (latest, wins):** "Keep it as simple as possible. There is too much happening and I cannot understand it. Bring back the division between people, under the new scope."
+
+What went wrong with the detailed version: every request was satisfied, but a newcomer could not explain it back. In the same period a doc rewrite had replaced the people lanes with responsibility names, which broke the user's mental model.
+
+How to redo it:
+
+1. *Message:* "Three people start in parallel, then prove one replayable bundle for the next subteam."
+2. *Audience:* teammates skimming it, ideally in under a minute.
+3. *Inventory, then cut:* keep IN, DOES, OUT, NEEDS, one line each. Drop DONE, NOT, CODE, tags, legend, contracts table, TF strip, rules panel, GPS column. Their facts stay in the plan docs.
+4. *Form:* swimlane grid, three lanes by person (name large, responsibility as a caption), four columns. Preflight, gate and conversion are single tall cards instead of three copies each.
+5. *Cross-person links:* one strip of three short boxes ("Wobbles → Hedgie: session files").
+6. *Footer:* one line for the next-subteam boundary and GPS being later, one line for the single TF-ownership rule.
+7. *Build:* same generator approach: content tables on top, auto-wrapping card engine below.
+8. *Verify:* render and inspect. Found the right-most column running off the canvas (column widths summed past the canvas width); fixed in the generator and re-rendered.
+9. *Document:* regeneration command in the script docstring and `TIMELINE.md`.
+
+Pattern to copy: satisfy the latest request, keep the user's grouping, move detail to docs, verify by looking at the render.
