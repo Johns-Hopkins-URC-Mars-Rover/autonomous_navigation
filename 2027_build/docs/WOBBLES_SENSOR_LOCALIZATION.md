@@ -6,7 +6,7 @@ Branch: `wobbles-sensor-localization`
 
 Wobbles makes the rover's sensor data trustworthy. The first question is: **“When the camera says it moved, what exactly moved, in which coordinate frame, at what time, and can we replay the evidence?”**
 
-Work in strict order: camera-only first, then IMU, then GPS. GPS is deliberately last because it is a slow/noisy global correction, not a replacement for local camera motion. Read `FOUNDATIONS.md` before this plan; its TF diagram is the contract this work protects.
+Do a short shared measurement preflight, then make **IMU integration and validation the first substantive Wobbles milestone**. The preflight verifies the camera stream, timestamps, and `base_link -> camera_link -> imu_link` geometry needed to interpret IMU data; it is not a prolonged camera-only feature phase. GPS remains last because it is a slow/noisy global correction, not a replacement for local camera motion. Read `FOUNDATIONS.md` before this plan; its TF diagram is the contract this work protects.
 
 ### Vocabulary before implementation
 
@@ -19,24 +19,28 @@ Work in strict order: camera-only first, then IMU, then GPS. GPS is deliberately
 
 ## Mission
 
-Make sensor data reliable, time-aware, replayable, and correctly framed. Build the path from camera-only localization to IMU-assisted localization and finally GPS-supported outdoor global localization.
+Make sensor data reliable, time-aware, replayable, and correctly framed. Establish a measured IMU-assisted local-localization baseline first, compare it against the existing camera-only baseline, and only later add GPS-supported outdoor global localization.
 
 ## Scope
 
-### Camera-only stage
+### Shared measurement preflight
 
-- Move the live data path to Ubuntu 24.04 / ROS 2 Jazzy using the official ZED ROS 2 wrapper.
-- Publish/validate rectified RGB, registered depth, point cloud, camera info, odometry, pose, and diagnostics.
-- Create the physical `base_link -> camera_link` static transform from measured mounting geometry.
-- Record matching SVO and rosbag2 sessions plus the shared manifest.
-- Verify timestamps, frame ids, image/depth alignment, point-cloud registration, and tracking status.
+- Verify one camera/IMU recording path (live or SVO replay), timestamp convention, frame ids, and the physical `base_link -> camera_link -> imu_link` geometry.
+- Record one replayable session and a minimal manifest so matched comparisons are possible.
+- Do not expand this into a separate camera-only implementation phase; Hedgie and Bedrawn begin their independent work immediately.
 
-### IMU stage
+### First substantive stage: IMU integration and validation
 
 - Publish and record the ZED IMU with its frame and timing documented.
 - Characterize stationary bias/noise, vibration, axis orientation, and data rate.
 - Compare camera-only tracking with ZED IMU-fused tracking on the same route.
 - Decide whether an additional `robot_localization` filter is warranted only after documenting real additional sensors, such as wheel odometry or an external IMU.
+
+### Integration stage
+
+- Stabilize the session manifest and sensor-topic/TF contract with Hedgie and Bedrawn.
+- Provide one replayable IMU-qualified session for their end-to-end integration checks.
+- Agree on the single owner of `map -> odom` before handing localization to the external costmap/planning team or combining a global-localization stack.
 
 ### GPS stage
 
@@ -81,10 +85,10 @@ The existing `main.py` may receive narrowly scoped export improvements: timestam
 - No TF edge has more than one publisher.
 - Every sensor message has the expected frame and monotonic timestamp.
 - Recorded SVO/bag replay reproduces the relevant topic set without hardware.
-- The camera-only path works before IMU work is considered complete.
+- The short measurement preflight is complete before IMU results are interpreted.
 - IMU benefits are demonstrated on matched runs, not assumed.
 - GPS is not declared navigation-ready without covariance/fix-quality and heading evidence.
 
 ## First independent milestone
 
-Use a Jazzy-supported ZED wrapper configuration with an SVO or live camera to show RGB, depth, point cloud, odometry/pose, and diagnostics in RViz, then write one complete manifest. This can be done without Hedgie's or Bedrawn's code.
+After the shared preflight, use a Jazzy-supported ZED wrapper configuration with an SVO or live camera to publish/record the IMU, characterize it, and show a matched camera-only versus IMU-fused trajectory comparison. Record one complete manifest. This can be done without Hedgie's or Bedrawn's code.

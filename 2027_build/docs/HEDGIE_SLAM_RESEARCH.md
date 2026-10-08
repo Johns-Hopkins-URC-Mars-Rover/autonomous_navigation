@@ -4,7 +4,7 @@ Branch: `hedgie-slam-research`
 
 ## Start here: the simple version
 
-Hedgie receives recordings after someone else captures them. The job is to answer: **“Can we turn these camera/depth recordings into a more accurate, better explained map and trajectory than the raw ZED baseline?”**
+Hedgie receives recordings after someone else captures them. The job is to answer: **“Can we turn these camera/depth recordings into a more accurate, better explained map and trajectory than the raw ZED baseline?”** Hedgie begins its visual-only benchmark in parallel with Wobbles' IMU work, then consumes an IMU-qualified session at the integration gate.
 
 This is not live camera setup or ROS plumbing. It is computer vision research using files: images, depth maps, camera calibration, and an initial ZED trajectory. The work begins with a dependable measurement baseline, then progresses to feature matching, loop closure, pose-graph optimization, dense maps, and semantic/dynamic-scene filtering.
 
@@ -27,7 +27,7 @@ session/
   intrinsics.yaml
   zed_baseline.tum
   tracking_status.csv
-  imu.csv              # optional until the IMU stage
+  imu.csv              # optional for the visual-only benchmark; used at integration
   gps.csv              # optional until the GPS stage
 ```
 
@@ -76,7 +76,7 @@ This is the research contribution most likely to improve map quality in real rov
 
 ### 4. Later sensor research
 
-When synchronized IMU data exists, compare visual-only and visual-inertial trajectories under fast motion, texture-poor areas, and turns. When GPS exists, use it as a sparse global constraint in the offline pose graph and test cross-session relocalization. GPS must not be treated as high-rate local motion.
+When Wobbles provides a synchronized, IMU-qualified session at the integration gate, compare visual-only and visual-inertial trajectories under fast motion, texture-poor areas, and turns. This is a comparison against the independently completed visual baseline, not a prerequisite for starting it. When GPS exists, use it as a sparse global constraint in the offline pose graph and test cross-session relocalization. GPS must not be treated as high-rate local motion.
 
 ## Required outputs
 
@@ -100,7 +100,7 @@ Each output must record its input session id, calibration id, code revision, mod
 - Every loop closure has visual/geometric evidence retained for review.
 - The method is compared against the ZED baseline, not judged only by qualitative screenshots.
 - Dynamic masking never silently removes the only evidence of a real static obstacle; report its false-removal cases.
-- Outputs are usable without ROS 2. An optional later exporter may write `PointCloud2` or `OccupancyGrid` for Bedrawn.
+- Outputs are usable without ROS 2. An optional later exporter may write `PointCloud2` or `OccupancyGrid` for Bedrawn's handoff bundle and the external costmap/planning team.
 
 ## Code changes owned by Hedgie
 
