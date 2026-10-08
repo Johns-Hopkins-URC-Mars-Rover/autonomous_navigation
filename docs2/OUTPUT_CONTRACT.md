@@ -118,3 +118,18 @@ The class list comes from `models/best.pt` (`model.names`). Fill it in at v1.0; 
 - Fill §4 observed behaviour (F6), §5 measurements (P10), §6 classes.
 - Final grid size, cell size, and wall thresholds after G2.
 - Confirm with the algorithm team that two `OccupancyGrid` topics are enough, or whether they want a multi-layer `grid_map` instead (stretch goal).
+
+## 9. Persistent map (Phase 4, draft, not part of v1.0)
+
+Added after the October 30 handoff by Phase 4 (tasks M1–M6). Nothing in v1.0 depends on it. Final names and the TF owner of `map → odom` depend on decision M1; see [PHASES.md](PHASES.md).
+
+| Topic / file | Type | Frame | Meaning |
+| --- | --- | --- | --- |
+| `/rover/map/grid` | `nav_msgs/OccupancyGrid`, latched (transient local) | `map` | Persistent free / occupied / unknown for the whole mapped area |
+| `/rover/map/class_grid` | `nav_msgs/OccupancyGrid`, latched | `map` | Same label codes as §3 |
+| `maps/<map_id>/map.yaml` + `map.pgm` | Nav2 `map_server` format | `map` | Saved occupancy, loadable by standard tools |
+| `maps/<map_id>/class.pgm` | image, same size and origin as `map.pgm` | `map` | Saved label codes |
+| `maps/<map_id>/area_map.area` | ZED area map | — | Lets the ZED relocalize so a new session's `map` frame matches the saved map |
+| `maps/<map_id>/map_manifest.json` | JSON | — | Source sessions, resolution, origin, software versions, alignment check result |
+
+Rules: the local grid in `odom` (§1) stays the input for local control; the persistent map is for "what does this area look like" and may be corrected after relocalization. Saved maps are stored outside Git.

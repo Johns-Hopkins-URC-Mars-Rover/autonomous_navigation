@@ -11,7 +11,8 @@ By **Friday, October 30, 2026**, the rover computer runs one launch command that
 | File | What it answers |
 | --- | --- |
 | [README.md](README.md) (this file) | What we are building, what we are not, and the key decisions |
-| [TIMELINE.md](TIMELINE.md) | Week-by-week schedule, gates, and what is on the critical path |
+| [PHASES.md](PHASES.md) | Each phase's deliverables, inputs, outputs, stand-ins, and which existing code feeds it, so Phases 1–3 can be built at the same time |
+| [TIMELINE.md](TIMELINE.md) | Schedule, gates (Phases 1–3 in parallel, mapping as Phase 4), and the critical path |
 | [WORK_BREAKDOWN.md](WORK_BREAKDOWN.md) | Every task, its output, its "done when" check, and its dependencies |
 | [OUTPUT_CONTRACT.md](OUTPUT_CONTRACT.md) | Exactly what the algorithm team receives: topics, frames, labels, failure behaviour |
 | [SETUP_UBUNTU_22_04.md](SETUP_UBUNTU_22_04.md) | The software stack to install and pin, and how to check it works |
@@ -50,8 +51,14 @@ rover_perception (our new package)
   └── health: tracking, depth quality, latency
   │
   ▼
-Handoff to the algorithm team: live topics, recorded bags, OUTPUT_CONTRACT.md
+Handoff to the algorithm team: live topics, recorded bags, OUTPUT_CONTRACT.md   (Oct 30)
+  │
+  ▼
+rover_mapping (Phase 4, after Oct 30)
+  └── persistent labelled map in `map`, saved and reloaded with the ZED area map
 ```
+
+Phase mapping: wrapper configuration and TF are **Phase 1**, `rover_perception` is **Phase 2**, recording, launch and handoff are **Phase 3**, and `rover_mapping` is **Phase 4**. Phases 1–3 run at the same time; see [PHASES.md](PHASES.md).
 
 ## Key decisions (and why)
 
@@ -73,12 +80,12 @@ Handoff to the algorithm team: live topics, recorded bags, OUTPUT_CONTRACT.md
 - GPS / outdoor global localization.
 - Wheel odometry fusion (unless the hardware already exists; see D3).
 - Drop-off, stair, and glass detection beyond "mark as unknown" (see D7).
-- Multi-session map merging; moving the legacy prototype into ROS packages.
+- A persistent, saved map before October 30. It is **Phase 4**, which starts after the handoff (see [PHASES.md](PHASES.md)). Merging maps from several sessions into one stays out of scope.
+- Moving the legacy prototype into ROS packages.
 - Migrating to Ubuntu 24.04 / ROS 2 Jazzy.
 
 ## Stretch goals (only after the October 30 gate passes)
 
-- Saved ZED area map so the `map` frame is consistent across sessions.
 - Temporal filtering that marks moving objects (people) as dynamic instead of permanent.
 - Multi-layer `grid_map` output if the algorithm team asks for it.
 - Jazzy / 24.04 port.
