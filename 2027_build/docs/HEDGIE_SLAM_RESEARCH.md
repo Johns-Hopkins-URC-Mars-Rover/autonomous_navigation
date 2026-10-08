@@ -1,10 +1,10 @@
-# Hedgie: Offline Visual SLAM and Semantic Mapping
+# VSLAM: Offline Visual SLAM and Semantic Mapping
 
 Branch: `hedgie-slam-research`
 
 ## Start here: the simple version
 
-Hedgie receives recordings after someone else captures them. The job is to answer: **“Can we turn these camera/depth recordings into a more accurate, better explained map and trajectory than the raw ZED baseline?”** Hedgie begins its visual-only benchmark in parallel with Wobbles' IMU work, then consumes an IMU-qualified session at the integration gate.
+This responsibility turns camera/depth sessions into trajectory and map evidence. The job is to answer: **“Can we turn these camera/depth recordings into a more accurate, better explained map and trajectory than the raw ZED baseline?”** It begins the visual-only benchmark in parallel with data-synthesis IMU work, then consumes an IMU-qualified session at the integration gate.
 
 This is not live camera setup or ROS plumbing. It is computer vision research using files: images, depth maps, camera calibration, and an initial ZED trajectory. The work begins with a dependable measurement baseline, then progresses to feature matching, loop closure, pose-graph optimization, dense maps, and semantic/dynamic-scene filtering.
 
@@ -14,7 +14,7 @@ Read `FOUNDATIONS.md` first, then the Inputs section below. Do not start with le
 
 Create the research-grade, camera-data-driven part of the project: an offline visual SLAM and semantic mapping pipeline that is quantitatively compared to the existing ZED trajectory baseline. This work must be useful even before live ROS 2 integration is complete.
 
-Hedgie consumes prepared recordings and metadata. Hedgie is **not** responsible for plugging in the ZED, configuring a live ROS 2 camera node, debugging TF, or operating GPS hardware. Light ROS 2 familiarity is useful for reading bags and eventually publishing an offline map, but the main work is CV, 3D geometry, SLAM, and experiment design.
+VSLAM consumes prepared recordings and metadata. It is **not** responsible for plugging in the ZED, configuring a live ROS 2 camera node, debugging TF, or operating GPS hardware. Light ROS 2 familiarity is useful for reading bags and eventually publishing an offline map, but the main work is CV, 3D geometry, SLAM, and experiment design.
 
 ## Inputs and independence
 
@@ -76,7 +76,7 @@ This is the research contribution most likely to improve map quality in real rov
 
 ### 4. Later sensor research
 
-When Wobbles provides a synchronized, IMU-qualified session at the integration gate, compare visual-only and visual-inertial trajectories under fast motion, texture-poor areas, and turns. This is a comparison against the independently completed visual baseline, not a prerequisite for starting it. When GPS exists, use it as a sparse global constraint in the offline pose graph and test cross-session relocalization. GPS must not be treated as high-rate local motion.
+When data synthesis provides a synchronized, IMU-qualified session at the integration gate, compare visual-only and visual-inertial trajectories under fast motion, texture-poor areas, and turns. This is a comparison against the independently completed visual baseline, not a prerequisite for starting it. When GPS exists, use it as a sparse global constraint in the offline pose graph and test cross-session relocalization. GPS must not be treated as high-rate local motion.
 
 ## Required outputs
 
@@ -100,9 +100,9 @@ Each output must record its input session id, calibration id, code revision, mod
 - Every loop closure has visual/geometric evidence retained for review.
 - The method is compared against the ZED baseline, not judged only by qualitative screenshots.
 - Dynamic masking never silently removes the only evidence of a real static obstacle; report its false-removal cases.
-- Outputs are usable without ROS 2. An optional later exporter may write `PointCloud2` or `OccupancyGrid` for Bedrawn's handoff bundle and the external costmap/planning team.
+- Outputs are usable without ROS 2. An optional later exporter may write `PointCloud2` or `OccupancyGrid` for the integration handoff bundle and next subteam.
 
-## Code changes owned by Hedgie
+## Code changes owned by VSLAM
 
 Create new code only under `2027_build/src/rover_camera_ai/` or an equivalent research package. Initial modules should include:
 
@@ -112,7 +112,7 @@ Create new code only under `2027_build/src/rover_camera_ai/` or an equivalent re
 - `evaluation/`: trajectory/map metrics and comparison plots;
 - `tests/`: synthetic geometry and regression fixtures.
 
-Hedgie may factor reusable, camera-independent detector utilities out of `object_detection.py` into the new package. Do not change `main.py` to run the research pipeline live and do not introduce a dependency on a live ZED or Nav2 while establishing the offline benchmark.
+VSLAM may factor reusable, camera-independent detector utilities out of `object_detection.py` into the new package. Do not change `main.py` to run the research pipeline live and do not introduce a dependency on a live ZED or Nav2 while establishing the offline benchmark.
 
 ## Reference docs: what to use and when
 

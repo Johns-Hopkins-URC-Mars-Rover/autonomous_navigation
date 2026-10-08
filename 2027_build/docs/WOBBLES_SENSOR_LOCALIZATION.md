@@ -1,12 +1,12 @@
-# Wobbles: ZED, IMU, GPS, and Localization Data Contract
+# Data Synthesis: ZED, IMU, GPS, and Session Evidence
 
 Branch: `wobbles-sensor-localization`
 
 ## Start here: the simple version
 
-Wobbles makes the rover's sensor data trustworthy. The first question is: **“When the camera says it moved, what exactly moved, in which coordinate frame, at what time, and can we replay the evidence?”**
+This responsibility makes the rover's sensor data trustworthy and turns recorded or synthetic observations into reusable session evidence. The first question is: **“When the camera says it moved, what exactly moved, in which coordinate frame, at what time, and can we replay the evidence?”**
 
-Do a short shared measurement preflight, then make **IMU integration and validation the first substantive Wobbles milestone**. The preflight verifies the camera stream, timestamps, and `base_link -> camera_link -> imu_link` geometry needed to interpret IMU data; it is not a prolonged camera-only feature phase. GPS remains last because it is a slow/noisy global correction, not a replacement for local camera motion. Read `FOUNDATIONS.md` before this plan; its TF diagram is the contract this work protects.
+Do a short shared measurement preflight, then make **IMU integration and validation the first substantive data-synthesis milestone**. The preflight verifies the camera stream, timestamps, and `base_link -> camera_link -> imu_link` geometry needed to interpret IMU data; it is not a prolonged camera-only feature phase. GPS remains last because it is a slow/noisy global correction, not a replacement for local camera motion. Read `FOUNDATIONS.md` before this plan; its TF diagram is the contract this work protects.
 
 ### Vocabulary before implementation
 
@@ -27,7 +27,7 @@ Make sensor data reliable, time-aware, replayable, and correctly framed. Establi
 
 - Verify one camera/IMU recording path (live or SVO replay), timestamp convention, frame ids, and the physical `base_link -> camera_link -> imu_link` geometry.
 - Record one replayable session and a minimal manifest so matched comparisons are possible.
-- Do not expand this into a separate camera-only implementation phase; Hedgie and Bedrawn begin their independent work immediately.
+- Do not expand this into a separate camera-only implementation phase; VSLAM and integration begin their independent work immediately.
 
 ### First substantive stage: IMU integration and validation
 
@@ -38,7 +38,7 @@ Make sensor data reliable, time-aware, replayable, and correctly framed. Establi
 
 ### Integration stage
 
-- Stabilize the session manifest and sensor-topic/TF contract with Hedgie and Bedrawn.
+- Stabilize the session manifest and sensor-topic/TF contract with VSLAM and integration.
 - Provide one replayable IMU-qualified session for their end-to-end integration checks.
 - Agree on the single owner of `map -> odom` before handing localization to the external costmap/planning team or combining a global-localization stack.
 
@@ -58,7 +58,7 @@ Make sensor data reliable, time-aware, replayable, and correctly framed. Establi
 - Sensor-health report from `/diagnostics` plus tracking/fix status summaries.
 - Camera-only vs IMU-fused vs GPS-assisted trajectory comparison.
 
-## Code changes owned by Wobbles
+## Code changes owned by data synthesis
 
 Create `2027_build/src/rover_localization/` and `2027_build/src/rover_bringup/` as needed. Expected artifacts:
 
@@ -91,4 +91,4 @@ The existing `main.py` may receive narrowly scoped export improvements: timestam
 
 ## First independent milestone
 
-After the shared preflight, use a Jazzy-supported ZED wrapper configuration with an SVO or live camera to publish/record the IMU, characterize it, and show a matched camera-only versus IMU-fused trajectory comparison. Record one complete manifest. This can be done without Hedgie's or Bedrawn's code.
+After the shared preflight, use a Jazzy-supported ZED wrapper configuration with an SVO or live camera to publish/record the IMU, characterize it, and show a matched camera-only versus IMU-fused trajectory comparison. Record one complete manifest. This can be done without VSLAM or integration code.

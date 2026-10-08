@@ -1,62 +1,47 @@
-# Code Change Ownership and Merge Boundaries
+# Subteam Responsibilities and Merge Boundaries
 
-This plan keeps three branches productive before hardware, ROS 2, or one another's work is ready. After a short shared measurement preflight, the three people work in parallel; Wobbles' first substantive work is IMU integration/validation, not a prolonged camera-only implementation phase.
+This subteam has one boundary: synthesize and validate navigation data, run VSLAM, and assemble a replayable handoff bundle. Costmaps, route selection, planning, control, and motors belong to the next subteam.
 
-## Read this before changing code
+## Responsibilities
 
-The goal is independent progress without incompatible assumptions. Each person owns a different answer:
+| Responsibility | Initial branch | Scope | Does not own |
+| --- | --- | --- | --- |
+| Data synthesis and sensor evidence | `wobbles-sensor-localization` | ZED/SVO and synthetic sessions, TF/URDF, manifest, IMU/GPS quality evidence, replay/recording | VSLAM research conclusions, downstream costmaps/planning |
+| VSLAM and map research | `hedgie-slam-research` | visual/visual-inertial trajectories, loop closure, map/occupancy/semantic exports, quantitative evaluation | live-sensor acquisition, costmaps/planning |
+| Integration and next-subteam handoff | `bedrawn-nav-integration` | synthetic/replay adapters, obstacle-input contract, footprint/offset metadata, final replayable bundle | costmap construction, planners/controllers, route choice, motors |
+| Legacy standalone ZED prototype | reviewed changes via `main` | narrow exports needed for evidence or replay | ROS workspace migration or downstream navigation stack |
 
-- Hedgie: “What can we learn from recorded RGB-D data to make the trajectory/map better?”
-- Wobbles: “Can we trust, replay, and correctly frame the live camera/IMU/GPS data?”
-- Bedrawn: “Can another team consume safe, costmap-ready map/obstacle/localization inputs in replay or simulation?”
+The branch names are merge boundaries, not exclusive personal roles. Anyone may contribute within an agreed responsibility without changing the subteam boundary.
 
-The root-level Python files are the existing prototype. New ROS 2 Jazzy code belongs in `2027_build/`; do not move or rewrite the prototype merely to make the folders look uniform.
+## Big overall deliverable
 
-| Area                                                                | Owner                     | Branch                          | Merge dependency                         |
-| ------------------------------------------------------------------- | ------------------------- | ------------------------------- | ---------------------------------------- |
-| Offline visual SLAM, loop closure, semantic/dense maps, metrics     | Hedgie                    | `hedgie-slam-research`        | None; uses session fixture or recordings |
-| ZED wrapper, TF/URDF, recording, IMU/GPS, localization logs         | Wobbles                   | `wobbles-sensor-localization` | None; live data or SVO only              |
-| Depth/scan adapters, costmap-ready handoff, replay/simulation       | Bedrawn                   | `bedrawn-nav-integration`     | None; synthetic source first             |
-| Legacy standalone ZED pipeline                                      | Shared, narrow edits only | `main` via reviewed PR        | No ROS rewrite                           |
+The only cross-branch deliverable is the **Navigation Data & VSLAM Handoff Bundle** described in [SUBTEAM_SCOPE.md](SUBTEAM_SCOPE.md). It combines the outputs below into one replayable artifact for the next subteam.
+
+| Contract | Producer responsibility | Consumer | Required content |
+| --- | --- | --- | --- |
+| Session/fixture manifest | Data synthesis | VSLAM, integration | calibration, frames, timestamps, checksums, route/environment metadata, known failures |
+| Sensor evidence | Data synthesis | VSLAM, integration | RGB-D, IMU, pose/odometry, diagnostics, tracking status, replay instructions |
+| VSLAM/map evidence | VSLAM | Integration | trajectory, map/occupancy context, frame, resolution, confidence/provenance, evaluation results |
+| Navigation Data & VSLAM Handoff Bundle | Integration | Next subteam | obstacle source, TF/localization context, footprint/offsets, map context, replay evidence, failure semantics |
+
+## Timeline and gates
+
+1. **Shared measurement preflight:** establish camera/IMU timing, fixed frames, and one replayable session. This enables IMU evidence but does not block synthetic data or VSLAM fixtures.
+2. **Parallel work:** data synthesis validates sensor quality and IMU-assisted motion; VSLAM establishes the visual baseline and evaluation; integration prepares the fixture, handoff schema, and obstacle-input validation.
+3. **Bundle gate:** replay one complete bundle, verify manifest/topics/QoS/TF, compare visual and visual-inertial results where IMU is synchronized, and document the one owner of `map -> odom`.
+4. **Package gate:** package only validated producers and handoff tools. Do not migrate the legacy prototype, introduce downstream navigation packages, or merge empty scaffolding merely to look complete.
 
 ## Boundary rules
 
-1. Do not edit another person's package without agreement.
-2. Use standard ROS 2 message types at package boundaries whenever possible.
-3. Keep the legacy root-level Python prototype runnable; do not move it into the 2027 workspace as part of unrelated work.
-4. Add one new package/configuration concern per pull request.
-5. Do not merge branch scaffolding solely because it exists. Merge a vertical slice with a documented acceptance check.
-6. Keep generated SVO, rosbag2, maps, models, and experiment outputs out of Git unless intentionally managed through an approved artifact store or Git LFS.
+1. Use standard ROS 2 message types at the subteam boundary whenever possible.
+2. Keep the root-level prototype runnable; do not move it into `2027_build/` as unrelated cleanup.
+3. One component owns each TF edge. Do not publish competing `map -> odom` transforms.
+4. Keep generated SVO, rosbag2, maps, models, and large experiment outputs out of Git unless an approved artifact store or Git LFS is used.
+5. The next subteam receives data and evidence, not a costmap, planner, controller, goal policy, or motor command.
 
-## Interface contracts to stabilize first
+## Edit sequencing
 
-Wobbles will stabilize the live/replay sensor contract. Bedrawn may develop against synthetic data until then. Hedgie reads file-based sessions and therefore remains independent.
-
-| Contract                | Producer  | Consumers       | Minimum fields                                             |
-| ----------------------- | --------- | --------------- | ---------------------------------------------------------- |
-| Session manifest        | Wobbles   | Hedgie, Bedrawn | calibration, frames, timestamps, checksums, route metadata |
-| Offline map export      | Hedgie    | Bedrawn, external team | frame, resolution, occupancy/confidence, provenance  |
-| Sensor topics/TF        | Wobbles   | Bedrawn, external team | standard message type, topic, frame id, rate, QoS    |
-| Costmap-ready input bundle | Bedrawn | External costmap/planning team | obstacle source, TF/localization context, footprint, replay evidence |
-
-## Timeline and integration gates
-
-1. **Shared preflight:** record one reproducible camera/IMU session and document clocks, frame names, and fixed mounting geometry. This enables IMU work; it does not block Hedgie's fixture or Bedrawn's synthetic work.
-2. **Parallel milestone:** Wobbles completes IMU health and matched VIO comparison; Hedgie completes a visual-only offline benchmark; Bedrawn completes a synthetic/replay costmap-ready input bundle.
-3. **Integration gate:** jointly test the manifest, topics/TF, map/obstacle formats, replay behavior, single `map -> odom` owner, and external-consumer handoff with one session.
-4. **Conversion gate:** package only those validated vertical slices. Do not migrate the legacy prototype or merge empty package skeletons merely to claim conversion progress.
-
-## Existing-code edit sequencing
-
-1. Wobbles adds structured standalone exports only after agreeing on the manifest schema.
-2. Hedgie factors camera-independent detection helpers only when tests prove `object_detection.py` behavior is preserved.
-3. Bedrawn does not couple a downstream costmap/planning stack to the root-level Python loop; it exports standard ROS messages and handoff metadata only.
-4. Any common `2027_build` skeleton change should be a small reviewed PR from `main`, then rebased/cherry-picked by the three branches. Keep it minimal until the integration gate; full package conversion follows validated handoffs.
-
-## Reference docs before cross-workstream changes
-
-- Read `FOUNDATIONS.md` before changing a frame, map, trajectory, area-map, or navigation claim; it defines the shared vocabulary and limits.
-- Read `README.md` before adding a ROS package, because it states the target workspace layout, build order, and TF ownership rule.
-- For a live-data change, defer to `WOBBLES_SENSOR_LOCALIZATION.md` and the official ZED ROS 2 topic/robot-integration references it links.
-- For an offline SLAM/map export change, defer to `HEDGIE_SLAM_RESEARCH.md` and its calibration/trajectory-format references.
-- For a costmap-ready input or external-handoff change, defer to `BEDRAWN_NAVIGATION.md` and its ROS message/replay references.
+1. Agree on manifest and handoff fields before changing cross-workstream code.
+2. Add a small tested producer/exporter or fixture at a time.
+3. Run the bundle gate with replay before package conversion.
+4. Consult [WOBBLES_SENSOR_LOCALIZATION.md](WOBBLES_SENSOR_LOCALIZATION.md), [HEDGIE_SLAM_RESEARCH.md](HEDGIE_SLAM_RESEARCH.md), and [BEDRAWN_NAVIGATION.md](BEDRAWN_NAVIGATION.md) for responsibility-specific detail.

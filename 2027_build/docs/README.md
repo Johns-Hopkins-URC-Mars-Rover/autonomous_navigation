@@ -6,21 +6,22 @@ This folder is the planning contract for the Ubuntu 24.04 / ROS 2 Jazzy build. T
 
 New to this project? Read `FOUNDATIONS.md` first. It explains, in plain language, what the current ZED prototype does, what its outputs mean, why a ZED area map is not yet a Nav2 map, and why `2027_build/` belongs at the repository root.
 
-Then read this file, your person-specific plan, and finally `DOCS.md` for the detailed legacy implementation reference.
+Then read this file, [SUBTEAM_SCOPE.md](SUBTEAM_SCOPE.md), the responsibility-specific plans, and finally `DOCS.md` for the detailed legacy implementation reference.
 
-## At a glance: who does what, and where data comes from
+## At a glance: what this subteam delivers
 
-![Workstream pipeline: IMU-first workstream timeline for Hedgie, Wobbles and Bedrawn](pipeline.svg)
+![Subteam pipeline: data synthesis, VSLAM, integration, and downstream handoff](pipeline.svg)
 
 Open [pipeline.svg](pipeline.svg) directly in any browser or editor for full size; it is a self-contained file and works offline. Its reproducible source is [`scripts/generate_pipeline_svg.py`](scripts/generate_pipeline_svg.py); see [TIMELINE.md](TIMELINE.md) for the delivery order and regeneration command.
 
-How to read it:
+Read [SUBTEAM_SCOPE.md](SUBTEAM_SCOPE.md) first for the ownership boundary and big overall deliverable.
 
-- **Lanes** are people. **Columns** show the agreed sequence: a short shared measurement preflight, parallel individual work led by Wobbles' IMU validation, integration, then package conversion. GPS remains a later phase.
-- Every box lists its **IN** and **OUT**. The colored chip says where the input comes from: **red = live hardware**, **green = recorded files/replay**, **grey = synthetic or fixture**, **brown = measured by hand**.
-- Wobbles is the data hub. Its **session folder** feeds Hedgie, and its **ROS topics/bag replay** feed Bedrawn. Until those exist, Hedgie uses a fixture and Bedrawn uses synthetic messages, so nobody is blocked.
-- The only Hedgie → Bedrawn link is the optional offline map export (dashed purple).
-- The bottom of the diagram lists the five points where all three must sync, and the TF rule (one publisher per arrow).
+How to read the diagram:
+
+- **Lanes** are responsibilities: data synthesis, VSLAM, and integration/handoff—not separate downstream-navigation teams.
+- **Columns** show the agreed sequence: a short shared measurement preflight, parallel work, integration into one bundle, then package conversion. GPS remains a later evidence source.
+- Data synthesis feeds VSLAM and integration. VSLAM contributes map/trajectory evidence. Integration assembles the final replayable bundle for the next subteam.
+- Costmaps, planning, and motor control are outside this subteam's scope.
 
 ## Baseline
 
@@ -38,17 +39,17 @@ camera data -> localization/map/perception outputs -> costmap/planning team -> f
 
 The 2027 build does **not** throw away the old program. It keeps it as a replayable baseline while the ROS 2 workspace grows beside it.
 
-## Local branch baseline
+## Responsibility and branch baseline
 
 All branches start from `main` after the documentation commit.
 
-| Person  | Branch                          | Primary package area                       | May proceed independently with                    |
-| ------- | ------------------------------- | ------------------------------------------ | ------------------------------------------------- |
-| Hedgie  | `hedgie-slam-research`        | offline visual SLAM and semantic mapping   | recorded SVO/extracted session folders            |
-| Wobbles | `wobbles-sensor-localization` | ZED/IMU/GPS and localization data contract | live camera or an SVO; no Nav2 dependency         |
-| Bedrawn | `bedrawn-nav-integration`     | costmap-ready obstacle/localization handoff | synthetic ROS bags or Wobbles bags when available |
+| Responsibility | Initial branch | Primary output | May proceed independently with |
+| --- | --- | --- | --- |
+| Data synthesis and sensor evidence | `wobbles-sensor-localization` | replayable sessions, manifest, IMU/TF quality evidence | live camera, SVO, or fixture |
+| VSLAM and map research | `hedgie-slam-research` | trajectories, map/occupancy exports, metrics | recorded/extracted session folders |
+| Integration and next-subteam handoff | `bedrawn-nav-integration` | validated Navigation Data & VSLAM Handoff Bundle | synthetic ROS bags or data-synthesis bags |
 
-Read the person-specific plans before editing. A merge is not required for another workstream to begin.
+Read [SUBTEAM_SCOPE.md](SUBTEAM_SCOPE.md) and the responsibility-specific plans before editing. A merge is not required for another workstream to begin.
 
 ## Shared end-state contract
 
@@ -57,9 +58,9 @@ map -> odom -> base_link -> camera_link -> imu_link
                   |
                   +-> costmap-ready obstacle/localization bundle -> external costmap/planning team
 
-Recorded session -> Hedgie offline SLAM/map research
-ZED / IMU / GPS -> Wobbles localization data contract
-Map + obstacle representation -> Bedrawn costmap-ready handoff -> external costmap/planning team
+Recorded/synthetic session -> VSLAM trajectory/map research
+ZED / IMU / GPS -> data-synthesis evidence and session contract
+Sensor + VSLAM + obstacle outputs -> integrated Navigation Data & VSLAM Handoff Bundle -> next subteam
 ```
 
 Exactly one component must own each TF edge. In particular, do not let ZED positional tracking, SLAM Toolbox, AMCL, and a GPS filter simultaneously publish `map -> odom`.
@@ -69,8 +70,8 @@ Exactly one component must own each TF edge. In particular, do not let ZED posit
 The concise source-of-truth version, including the diagram-generation command, is in [TIMELINE.md](TIMELINE.md).
 
 1. **Shared measurement preflight (small, required):** verify the camera stream, clock convention, `base_link -> camera_link -> imu_link` geometry, and a replayable recording. This is not a camera-only feature phase; it is the evidence needed to interpret IMU measurements.
-2. **Parallel individual work, with IMU first for Wobbles:** Wobbles publishes/records and validates IMU timing, axes, bias/noise, and matched camera-only versus IMU-fused runs. At the same time, Hedgie establishes the offline visual-SLAM benchmark from recordings/fixtures, and Bedrawn establishes the costmap-ready obstacle/localization input bundle in synthetic/replay.
-3. **Integration:** freeze and test the session manifest, sensor-topic/TF contract, and map/obstacle handoffs; replay Wobbles sessions through Hedgie and Bedrawn; select the one owner of `map -> odom`.
+2. **Parallel responsibility work, with IMU evidence first:** synthesize/record and validate IMU timing, axes, bias/noise, and matched camera-only versus IMU-fused runs; establish the offline VSLAM benchmark from recordings/fixtures; and prepare a synthetic/replay integration fixture plus handoff contract.
+3. **Integration:** freeze and test the session manifest, sensor-topic/TF contract, VSLAM map/trajectory exports, and obstacle handoff; assemble and replay the Navigation Data & VSLAM Handoff Bundle; select the one owner of `map -> odom`.
 4. **Package conversion:** move only the demonstrated vertical slices into the final ROS 2 packages. Minimal package metadata/scaffolding may exist earlier, but the legacy prototype is not migrated merely to make the folder layout look complete.
 5. **GPS later:** validate GNSS quality/heading and outdoor repeat routes after the local stack works.
 
@@ -85,7 +86,7 @@ No live motor command is an acceptance criterion for this repository. First prov
   src/
     rover_camera_ai/
     rover_localization/
-    rover_navigation/
+    rover_navigation_inputs/
     rover_bringup/
   config/
   evaluation/
@@ -106,7 +107,7 @@ Every recorded session should ultimately have a stable identifier and this minim
 - pose/tracking status timeline, IMU availability, and GPS availability;
 - the test route, environment, and known failure events.
 
-The schema may be drafted independently, but Wobbles owns its final live-data implementation. Hedgie can use a synthetic or hand-authored manifest while waiting.
+The schema may be drafted independently, but data synthesis owns its final live-data implementation. VSLAM can use a synthetic or hand-authored manifest while waiting.
 
 ## Reference docs: what to use and when
 
@@ -114,6 +115,6 @@ The schema may be drafted independently, but Wobbles owns its final live-data im
 - [ZED robot integration](https://docs.stereolabs.com/docs/integrations/ros-2/robot-integration): consult before defining the rover URDF or choosing how ZED positional tracking coexists with other localization sources.
 - [ZED positional tracking in ROS 2](https://docs.stereolabs.com/docs/integrations/ros-2/positional-tracking): use it to understand the difference between `odom`, globally corrected `pose`, paths, tracking confidence, and area-map relocalization.
 - [Nav2 first-time robot setup](https://docs.nav2.org/rolling/configuration_and_development/first_time_robot_setup_guide/): use it to understand the transforms, odometry, sensor, mapping/localization, and footprint information the external costmap/planning team will need from this handoff.
-- [Nav2 mapping and localization](https://docs.nav2.org/rolling/configuration_and_development/first_time_robot_setup_guide/sensors/mapping_localization/): use it to check the map/obstacle/localization information expected downstream; do not treat it as a configuration task for Bedrawn.
-- [Nav2 navigation plugins](https://docs.nav2.org/rolling/configuration_and_development/navigation_plugins/): this is for the external team choosing their planner/controller stack, not for implementation in this repository's Bedrawn workstream.
+- [Nav2 mapping and localization](https://docs.nav2.org/rolling/configuration_and_development/first_time_robot_setup_guide/sensors/mapping_localization/): use it to check the map/obstacle/localization information expected downstream; do not treat it as an integration configuration task.
+- [Nav2 navigation plugins](https://docs.nav2.org/rolling/configuration_and_development/navigation_plugins/): this is for the next subteam choosing their planner/controller stack, not for implementation in this repository's integration workstream.
 - [Nav2 GPS localization](https://docs.nav2.org/rolling/tutorials/general_tutorials/navigation2_with_gps/navigation2_with_gps/): use only for the GPS stage. Focus on TF ownership, uncertainty, heading, and the role of `navsat_transform`.

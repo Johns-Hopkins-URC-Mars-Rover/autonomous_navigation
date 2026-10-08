@@ -1,6 +1,6 @@
 # Foundations: What Exists, What It Means, and What Comes Next
 
-Read this before the person-specific plans or the detailed legacy-pipeline reference.
+Read this before the responsibility-specific plans or the detailed legacy-pipeline reference.
 
 ## The project in one sentence
 
@@ -59,7 +59,7 @@ Why this is better than rewriting the root code now:
 
 ### Agreed implementation sequence
 
-The team does not need to wait for a full camera-only build before Wobbles starts IMU work. First perform a small shared measurement preflight: establish the camera/IMU clock convention, physical frames, and one replayable recording. Then Wobbles validates IMU data and compares camera-only with IMU-fused motion while Hedgie and Bedrawn complete their independent offline and synthetic/replay baselines. Only after those milestones do the teams integrate their contracts and convert validated vertical slices into the final ROS packages. This preserves the prerequisite measurements without delaying the work that can run in parallel.
+The subteam does not need to wait for a full camera-only build before starting IMU work. First perform a small shared measurement preflight: establish the camera/IMU clock convention, physical frames, and one replayable recording. Then data synthesis validates IMU evidence and compares camera-only with IMU-fused motion while VSLAM and integration complete their independent file/fixture and synthetic/replay baselines. Only after those milestones does the subteam assemble the Navigation Data & VSLAM Handoff Bundle and convert validated producers into ROS packages. This preserves the prerequisite measurements without delaying work that can run in parallel.
 
 ## The one TF picture everyone must understand
 

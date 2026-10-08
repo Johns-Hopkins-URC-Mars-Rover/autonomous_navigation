@@ -1,12 +1,12 @@
-# Bedrawn: Costmap-Ready Navigation Input Handoff
+# Integration: Navigation Data & VSLAM Handoff Bundle
 
 Branch: `bedrawn-nav-integration`
 
 ## Start here: the simple version
 
-Bedrawn does **not** build the costmap or choose the route. Bedrawn delivers the reliable, replayable inputs that the costmap/planning team needs to make those decisions. The first question is: **“Can another team consume our obstacle observations and localization context without having to rediscover frames, timing, calibration, or safety limits?”**
+This responsibility does **not** build the costmap or choose the route. It assembles the reliable, replayable data-synthesis and VSLAM outputs that the next subteam needs to make those decisions. The first question is: **“Can another team consume our obstacle observations, localization context, and VSLAM evidence without having to rediscover frames, timing, calibration, or safety limits?”**
 
-Begin with synthetic or replayed messages while Wobbles performs IMU integration/validation. Bedrawn's baseline does not wait for an IMU result; it switches to Wobbles' agreed sensor/TF contract at the integration gate. Motors remain off. Read `FOUNDATIONS.md` before this plan.
+Begin with synthetic or replayed messages while data synthesis performs IMU integration/validation. This baseline does not wait for an IMU result; it switches to the agreed sensor/TF contract at the integration gate. Motors remain off. Read `FOUNDATIONS.md` before this plan.
 
 ### Vocabulary before implementation
 
@@ -18,7 +18,7 @@ Begin with synthetic or replayed messages while Wobbles performs IMU integration
 
 ## Mission
 
-Produce one large, costmap-ready navigation-input deliverable that an external costmap/planning team can consume directly. Bedrawn owns input quality and handoff evidence, not costmap configuration, planner/controller selection, goal selection, or motor commands.
+Produce one large, costmap-ready navigation-input deliverable that the next subteam can consume directly. Integration owns input quality and handoff evidence, not costmap configuration, planner/controller selection, goal selection, or motor commands.
 
 ## Scope
 
@@ -29,16 +29,16 @@ Produce one large, costmap-ready navigation-input deliverable that an external c
 - Prepare the replay bundle and document topic name, message type, rate, QoS, and expected TF chain.
 - Measure and record rover footprint dimensions and the assumptions needed by the receiving team to choose a safety margin.
 
-### Integration with Wobbles and Hedgie
+### Integration with data synthesis and VSLAM
 
-- Replace synthetic observations with Wobbles replay/live topics only after the shared sensor-topic/TF contract is stable.
+- Replace synthetic observations with data-synthesis replay/live topics only after the shared sensor-topic/TF contract is stable.
 - Verify obstacle input is time-aligned with the agreed local odometry frame and behaves predictably through tracking loss/relocalization.
-- Include Hedgie's optional map export as map context when available, with frame, resolution, occupancy/confidence, and provenance documented.
+- Include the optional VSLAM map export as map context when available, with frame, resolution, occupancy/confidence, and provenance documented.
 - Produce one representative replay bundle that exercises the complete handoff.
 
 ### Later GPS context
 
-- Pass through the single approved global-localization source from Wobbles only after its quality/heading contract is accepted.
+- Pass through the single approved global-localization source from data synthesis only after its quality/heading contract is accepted.
 - Document global-frame jumps and localization validity for the receiving team; do not configure their costmap or waypoint behavior.
 
 ## Overall deliverable: costmap-ready navigation-input bundle
@@ -53,7 +53,7 @@ The bundle must contain:
 
 The receiving costmap/planning team owns conversion of this bundle into a costmap, route selection, planning/controller configuration, and any future motor integration.
 
-## Code changes owned by Bedrawn
+## Code changes owned by integration
 
 Create `2027_build/src/rover_navigation_inputs/` and add handoff configuration under `2027_build/config/`. Expected components:
 
@@ -63,7 +63,7 @@ Create `2027_build/src/rover_navigation_inputs/` and add handoff configuration u
 - measured-footprint and sensor-offset configuration;
 - optional map-context exporter/adapter, without assuming a downstream costmap implementation.
 
-Do not modify ZED camera acquisition in `main.py`. Consume standard ROS messages from Wobbles's contract. Do not implement `slam_toolbox`, Nav2 costmaps, planners, controllers, behavior trees, or costmap plugins on this branch.
+Do not modify ZED camera acquisition in `main.py`. Consume standard ROS messages from the data-synthesis contract. Do not implement `slam_toolbox`, Nav2 costmaps, planners, controllers, behavior trees, or costmap plugins on this branch.
 
 ## Reference docs: what to use and when
 
@@ -83,4 +83,4 @@ Do not modify ZED camera acquisition in `main.py`. Consume standard ROS messages
 
 ## First independent milestone
 
-Use a synthetic `LaserScan`/`PointCloud2` source to produce a documented replay bundle with the required TF/localization context and footprint metadata. Replace the synthetic source with Wobbles's topics later without changing the external handoff contract.
+Use a synthetic `LaserScan`/`PointCloud2` source to produce a documented replay bundle with the required TF/localization context and footprint metadata. Replace the synthetic source with data-synthesis topics later without changing the external handoff contract.
