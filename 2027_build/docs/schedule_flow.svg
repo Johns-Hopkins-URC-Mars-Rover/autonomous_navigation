@@ -1,0 +1,189 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1224 1601" width="1224" height="1601" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" role="img" aria-labelledby="t d">
+  <title id="t">October 2026: where the work splits and where it meets</title>
+  <desc id="d">Flowchart with three lanes (Hedgie, Wobbles, Bedrawn) running top to bottom. The lanes meet at gates C0 (Oct 12), G1 (Oct 16), G2 (Oct 23) and G3 (Oct 30), where outputs are handed over and decisions are made, and split into parallel work between gates. Work after Oct 30 is deferred, with dates set at G3.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#475569"/></marker>
+    <style>
+      text { fill: #243b53; }
+      .title { font-size: 27px; font-weight: 700; fill: #102a43; } .subtitle { font-size: 15px; fill: #486581; }
+      .legend { font-size: 13px; fill: #486581; }
+      .lane { font-size: 19px; font-weight: 700; } .laneRole { font-size: 13px; font-weight: 700; fill: #102a43; }
+      .period { font-size: 16px; font-weight: 700; fill: #102a43; }
+      .gateId { font-size: 15px; font-weight: 700; fill: #ffffff; }
+      .gateTitle { font-size: 17px; font-weight: 700; fill: #102a43; } .gateLabel { font-size: 14px; font-weight: 700; fill: #102a43; }
+      .cardTitle { font-size: 16px; font-weight: 700; fill: #102a43; } .body { font-size: 14px; }
+      .needs { font-size: 13px; fill: #486581; }
+    </style>
+  </defs>
+  <rect width="1224" height="1601" fill="#f8fafc"/>
+  <rect x="32" y="16" width="1160" height="104" rx="12" fill="#ffffff" stroke="#d9e2ec" stroke-width="1.5"/>
+  <text x="56" y="52" class="title">October 2026: where the work splits and where it meets</text>
+  <text x="56" y="80" class="subtitle">After each gate the three people work in parallel; at the next gate they meet, hand over outputs and recalibrate.</text>
+  <rect x="56" y="91" width="34" height="16" rx="4" fill="#edf2f7" stroke="#334155" stroke-width="2"/>
+  <text x="100" y="104" class="legend">Gate: all three meet</text>
+  <path d="M270 99 L308 99" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="318" y="104" class="legend">Work flows into the next step</text>
+  <path d="M548 99 L586 99" stroke="#475569" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+  <text x="596" y="104" class="legend">Deferred: dates set at G3</text>
+  <text x="806" y="104" class="legend">“Needs” = waits on someone else</text>
+  <rect x="176" y="140" width="320" height="62" rx="12" fill="#f4f0ff" stroke="#7a5cc0" stroke-width="2"/>
+  <text x="336" y="168" class="lane" text-anchor="middle" style="fill:#5b3c9b">HEDGIE</text>
+  <text x="336" y="189" class="laneRole" text-anchor="middle">VSLAM and map research</text>
+  <rect x="524" y="140" width="320" height="62" rx="12" fill="#e6fffa" stroke="#1f8a7e" stroke-width="2"/>
+  <text x="684" y="168" class="lane" text-anchor="middle" style="fill:#167567">WOBBLES</text>
+  <text x="684" y="189" class="laneRole" text-anchor="middle">Data synthesis and sensor evidence</text>
+  <rect x="872" y="140" width="320" height="62" rx="12" fill="#fff5e6" stroke="#c27a00" stroke-width="2"/>
+  <text x="1032" y="168" class="lane" text-anchor="middle" style="fill:#a65d00">BEDRAWN</text>
+  <text x="1032" y="189" class="laneRole" text-anchor="middle">Integration and handoff</text>
+  <path d="M336 204 L336 244" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <path d="M684 204 L684 244" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <path d="M1032 204 L1032 244" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <rect x="176" y="248" width="1016" height="94" rx="12" fill="#edf2f7" stroke="#334155" stroke-width="2.5"/>
+  <rect x="192" y="262" width="46" height="28" rx="6" fill="#334155" stroke="#334155" stroke-width="0"/>
+  <text x="215" y="281" class="gateId" text-anchor="middle">C0</text>
+  <text x="260" y="278" class="gateTitle">Mon Oct 12 · Shared preflight and interface freeze</text>
+  <text x="260" y="306" class="gateLabel">Together:</text>
+  <text x="352" y="306" class="body">check camera, clock and frames; record one session</text>
+  <text x="260" y="326" class="gateLabel">Decide:</text>
+  <text x="352" y="326" class="body">freeze the manifest schema, topic names and frames</text>
+  <path d="M336 344 L336 384" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <path d="M684 344 L684 384" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <path d="M1032 344 L1032 384" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="152" y="471" class="period" text-anchor="end">Oct 12–16</text>
+  <rect x="176" y="388" width="320" height="154" rx="12" fill="#ffffff" stroke="#7a5cc0" stroke-width="2"/>
+  <text x="192" y="418" class="cardTitle">Visual baseline on stand-ins</text>
+  <text x="192" y="443" class="body">•</text>
+  <text x="208" y="443" class="body">Session loader and validator</text>
+  <text x="192" y="462" class="body">•</text>
+  <text x="208" y="462" class="body">ZED-baseline benchmark on frame</text>
+  <text x="208" y="481" class="body">dumps</text>
+  <text x="192" y="507" class="needs">Needs: manifest schema from C0</text>
+  <rect x="524" y="388" width="320" height="154" rx="12" fill="#ffffff" stroke="#1f8a7e" stroke-width="2"/>
+  <text x="540" y="418" class="cardTitle">IMU validation and recording</text>
+  <text x="540" y="443" class="body">•</text>
+  <text x="556" y="443" class="body">Measure rover frames (with Bedrawn)</text>
+  <text x="540" y="462" class="body">•</text>
+  <text x="556" y="462" class="body">IMU checks; fusion on vs off</text>
+  <text x="540" y="481" class="body">•</text>
+  <text x="556" y="481" class="body">Record sessions with manifests</text>
+  <text x="540" y="507" class="needs">Needs: the rover (priority until G1)</text>
+  <rect x="872" y="388" width="320" height="154" rx="12" fill="#ffffff" stroke="#c27a00" stroke-width="2"/>
+  <text x="888" y="418" class="cardTitle">Contract and synthetic bundle</text>
+  <text x="888" y="443" class="body">•</text>
+  <text x="904" y="443" class="body">Handoff contract draft</text>
+  <text x="888" y="462" class="body">•</text>
+  <text x="904" y="462" class="body">Synthetic fixture bag</text>
+  <text x="888" y="481" class="body">•</text>
+  <text x="904" y="481" class="body">Footprint and offsets (with</text>
+  <text x="904" y="500" class="body">Wobbles)</text>
+  <text x="888" y="526" class="needs">Needs: Wobbles' topic list</text>
+  <path d="M336 544 L336 584" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <path d="M684 544 L684 584" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <path d="M1032 544 L1032 584" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <rect x="176" y="588" width="1016" height="94" rx="12" fill="#edf2f7" stroke="#334155" stroke-width="2.5"/>
+  <rect x="192" y="602" width="46" height="28" rx="6" fill="#334155" stroke="#334155" stroke-width="0"/>
+  <text x="215" y="621" class="gateId" text-anchor="middle">G1</text>
+  <text x="260" y="618" class="gateTitle">Fri Oct 16 · Fusion gate</text>
+  <text x="260" y="646" class="gateLabel">Hand over:</text>
+  <text x="352" y="646" class="body">Wobbles → Hedgie and Bedrawn: IMU-qualified recorded sessions</text>
+  <text x="260" y="666" class="gateLabel">Decide:</text>
+  <text x="352" y="666" class="body">area memory on or off; confirm the one owner of map → odom</text>
+  <path d="M336 684 L336 724" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <path d="M684 684 L684 724" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <path d="M1032 684 L1032 724" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="152" y="801.5" class="period" text-anchor="end">Oct 16–23</text>
+  <rect x="176" y="728" width="320" height="135" rx="12" fill="#ffffff" stroke="#7a5cc0" stroke-width="2"/>
+  <text x="192" y="758" class="cardTitle">Map on real sessions</text>
+  <text x="192" y="783" class="body">•</text>
+  <text x="208" y="783" class="body">BEV grid: free / occupied / unknown</text>
+  <text x="192" y="802" class="body">•</text>
+  <text x="208" y="802" class="body">Map export for the bundle</text>
+  <text x="192" y="821" class="body">•</text>
+  <text x="208" y="821" class="body">Visual vs visual-inertial</text>
+  <text x="192" y="847" class="needs">Needs: Wobbles' IMU session</text>
+  <rect x="524" y="728" width="320" height="135" rx="12" fill="#ffffff" stroke="#1f8a7e" stroke-width="2"/>
+  <text x="540" y="758" class="cardTitle">Health and TF checks</text>
+  <text x="540" y="783" class="body">•</text>
+  <text x="556" y="783" class="body">Sensor-health report</text>
+  <text x="540" y="802" class="body">•</text>
+  <text x="556" y="802" class="body">One publisher per TF edge</text>
+  <rect x="872" y="728" width="320" height="135" rx="12" fill="#ffffff" stroke="#c27a00" stroke-width="2"/>
+  <text x="888" y="758" class="cardTitle">Real-data obstacle input</text>
+  <text x="888" y="783" class="body">•</text>
+  <text x="904" y="783" class="body">Depth → LaserScan on real bags</text>
+  <text x="888" y="802" class="body">•</text>
+  <text x="904" y="802" class="body">Replay harness and validator</text>
+  <text x="888" y="828" class="needs">Needs: Wobbles' recorded sessions</text>
+  <path d="M336 865 L336 905" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <path d="M684 865 L684 905" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <path d="M1032 865 L1032 905" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <rect x="176" y="909" width="1016" height="94" rx="12" fill="#edf2f7" stroke="#334155" stroke-width="2.5"/>
+  <rect x="192" y="923" width="46" height="28" rx="6" fill="#334155" stroke="#334155" stroke-width="0"/>
+  <text x="215" y="942" class="gateId" text-anchor="middle">G2</text>
+  <text x="260" y="939" class="gateTitle">Fri Oct 23 · Perception gate</text>
+  <text x="260" y="967" class="gateLabel">Hand over:</text>
+  <text x="352" y="967" class="body">Hedgie → Bedrawn: map export.  Wobbles → Bedrawn: health report</text>
+  <text x="260" y="987" class="gateLabel">Decide:</text>
+  <text x="352" y="987" class="body">contract freeze candidate; cut scope if behind</text>
+  <path d="M336 1005 L336 1045" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <path d="M684 1005 L684 1045" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <path d="M1032 1005 L1032 1045" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="152" y="1122" class="period" text-anchor="end">Oct 23–30</text>
+  <rect x="176" y="1049" width="320" height="134" rx="12" fill="#ffffff" stroke="#7a5cc0" stroke-width="2"/>
+  <text x="192" y="1079" class="cardTitle">Map context</text>
+  <text x="192" y="1104" class="body">•</text>
+  <text x="208" y="1104" class="body">Fix the map export from the G2</text>
+  <text x="208" y="1123" class="body">review</text>
+  <rect x="524" y="1049" width="320" height="134" rx="12" fill="#ffffff" stroke="#1f8a7e" stroke-width="2"/>
+  <text x="540" y="1079" class="cardTitle">Evidence gaps</text>
+  <text x="540" y="1104" class="body">•</text>
+  <text x="556" y="1104" class="body">Fill missing session evidence</text>
+  <text x="540" y="1123" class="body">•</text>
+  <text x="556" y="1123" class="body">Support the live demo</text>
+  <rect x="872" y="1049" width="320" height="134" rx="12" fill="#ffffff" stroke="#c27a00" stroke-width="2"/>
+  <text x="888" y="1079" class="cardTitle">Assemble the bundle</text>
+  <text x="888" y="1104" class="body">•</text>
+  <text x="904" y="1104" class="body">Bundle, README and failure cases</text>
+  <text x="888" y="1123" class="body">•</text>
+  <text x="904" y="1123" class="body">Dry run Tue Oct 27 (proposed)</text>
+  <text x="888" y="1149" class="needs">Needs: Hedgie's map, Wobbles' health</text>
+  <text x="888" y="1167" class="needs">report</text>
+  <path d="M336 1185 L336 1225" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <path d="M684 1185 L684 1225" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <path d="M1032 1185 L1032 1225" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <rect x="176" y="1229" width="1016" height="94" rx="12" fill="#edf2f7" stroke="#334155" stroke-width="2.5"/>
+  <rect x="192" y="1243" width="46" height="28" rx="6" fill="#334155" stroke="#334155" stroke-width="0"/>
+  <text x="215" y="1262" class="gateId" text-anchor="middle">G3</text>
+  <text x="260" y="1259" class="gateTitle">Fri Oct 30 · Handoff to the algorithm team</text>
+  <text x="260" y="1287" class="gateLabel">Hand over:</text>
+  <text x="352" y="1287" class="body">one replayable bundle and contract v1.0</text>
+  <text x="260" y="1307" class="gateLabel">Decide:</text>
+  <text x="352" y="1307" class="body">set dates for everything below</text>
+  <path d="M336 1325 L336 1365" fill="none" stroke="#475569" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+  <path d="M684 1325 L684 1365" fill="none" stroke="#475569" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+  <path d="M1032 1325 L1032 1365" fill="none" stroke="#475569" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+  <text x="152" y="1433" class="period" text-anchor="end">After Oct 30</text>
+  <rect x="176" y="1369" width="320" height="116" rx="12" fill="#ffffff" stroke="#7a5cc0" stroke-width="2" stroke-dasharray="7 5"/>
+  <text x="192" y="1399" class="cardTitle">Mapping and research</text>
+  <text x="192" y="1424" class="body">•</text>
+  <text x="208" y="1424" class="body">Phase 4 mapping from Mon Nov 2</text>
+  <text x="192" y="1443" class="body">•</text>
+  <text x="208" y="1443" class="body">Loop closure, dense map, dynamic</text>
+  <text x="208" y="1462" class="body">masking</text>
+  <rect x="524" y="1369" width="320" height="116" rx="12" fill="#ffffff" stroke="#1f8a7e" stroke-width="2" stroke-dasharray="7 5"/>
+  <text x="540" y="1399" class="cardTitle">GPS</text>
+  <text x="540" y="1424" class="body">•</text>
+  <text x="556" y="1424" class="body">GPS fusion comparison</text>
+  <text x="540" y="1443" class="body">•</text>
+  <text x="556" y="1443" class="body">main.py exports, if reopened</text>
+  <rect x="872" y="1369" width="320" height="116" rx="12" fill="#ffffff" stroke="#c27a00" stroke-width="2" stroke-dasharray="7 5"/>
+  <text x="888" y="1399" class="cardTitle">Packages and GPS</text>
+  <text x="888" y="1424" class="body">•</text>
+  <text x="904" y="1424" class="body">Jazzy package conversion</text>
+  <text x="888" y="1443" class="body">•</text>
+  <text x="904" y="1443" class="body">GPS pass-through</text>
+  <text x="888" y="1469" class="needs">Needs: Wobbles' GPS evidence</text>
+  <rect x="32" y="1515" width="1160" height="62" rx="12" fill="#edf2f7" stroke="#bcccdc" stroke-width="1"/>
+  <text x="52" y="1542" class="body">Sources: 2027_build/docs/TIMELINE.md and docs2/TIMELINE.md. The Oct 27 dry run is proposed, not in docs2.</text>
+  <text x="52" y="1564" class="body">Rule: if G1 slips, fusion fixes come first; Hedgie and Bedrawn keep working on recordings.</text>
+</svg>

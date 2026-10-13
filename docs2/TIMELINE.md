@@ -122,3 +122,7 @@ Work: M1–M6. Exact dates are set at the G3 demo, together with the algorithm t
 | Indoor scenes with blank walls or poor light | Tracking loss | IMU fusion, failure documentation (F6), health signal (P8) |
 | Reflective or dark floors give bad depth | False obstacles or holes | Confidence threshold, "unseen is unknown" rule, test in the real environment early |
 | Area memory turned off for the demo (F7) | No consistent `map` frame for Phase 4 | Phase 4 starts with M1 re-testing area memory; option B or C in [PHASES.md](PHASES.md) as fallback |
+
+## Team sync meetings
+
+Each gate above (C0, G1, G2, G3) is also a meeting for the data-synthesis, VSLAM, and integration people. They check the evidence, recalibrate, and record changes. The agenda for each meeting, a proposed handoff dry run on Tue Oct 27, and the list of work that cannot run in parallel are in [2027_build/docs/TIMELINE.md](../2027_build/docs/TIMELINE.md#key-dates-and-sync-meetings-october-2026-milestone).

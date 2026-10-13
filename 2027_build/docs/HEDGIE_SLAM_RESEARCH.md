@@ -126,3 +126,38 @@ VSLAM may factor reusable, camera-independent detector utilities out of `object_
 ## First independent milestone
 
 Given one session folder, generate a validated baseline report, render the ZED trajectory, produce a depth-back-projected point cloud, and save a reviewable BEV occupancy/confidence image. This does not require anyone else's branch to merge.
+
+## Agent prompts by phase
+
+These are copy-paste prompts for an AI coding agent (or a teammate) working on this responsibility, in the phase order from [TIMELINE.md](TIMELINE.md). Each prompt has a due date and lists anything it waits on. The dates and sync meetings come from [TIMELINE.md](TIMELINE.md#key-dates-and-sync-meetings-october-2026-milestone). A prompt marked **not this month** conflicts with the October plan in [`docs2/`](../../docs2/README.md); its date is set at the Oct 30 review. Start each prompt with the shared preamble below.
+
+> **Preamble.** You are working in the `autonomous_navigation` repo. Before writing code, read `2027_build/docs/FOUNDATIONS.md`, `SUBTEAM_SCOPE.md`, `CODE_CHANGE_OWNERSHIP.md`, and `2027_build/docs/HEDGIE_SLAM_RESEARCH.md`. Work on branch `hedgie-slam-research`. Until Oct 30, 2026, `docs2/` is the working plan: Ubuntu 22.04 / ROS 2 Humble, the ZED wrapper owns `map -> odom` and `odom -> base_link` (decision D4), `main.py` stays untouched (D8), and topic names follow `docs2/OUTPUT_CONTRACT.md`. After that, the long-term target is Ubuntu 24.04 / Jazzy. Rules: exactly one component owns each TF edge (`map -> odom -> base_link -> camera_link -> imu_link`); no costmaps, planners, controllers, or motor commands; keep SVO, bags, and large outputs out of Git. If a fact is not in the docs or the data, write "to be decided" instead of inventing it.
+
+### Phase 1: shared measurement preflight (all three, due C0 Mon Oct 12)
+
+1. **Preflight checklist.** "Write a preflight script and checklist that verifies the ZED stream opens (live or SVO), the timestamp convention, the frame ids, and the measured `base_link -> camera_link -> imu_link` geometry. Record one replayable session with a minimal `manifest.json` that matches `docs/contract/session_manifest.example.json`. Output a pass/fail report."
+2. **Freeze the manifest schema.** "Compare `docs/contract/SENSOR_DATA_CONTRACT.md`, the manifest example, and the 'Shared data handoff' list in `2027_build/docs/README.md`. Propose one JSON Schema for the session manifest and a validator with tests. List every field where the docs disagree." *All three agree on it at C0; everyone's loaders and fixtures build against it.*
+
+### Phase 2: parallel work (visual-only baseline, due G2 Fri Oct 23)
+
+Work on frame dumps and synthetic fixtures until G1 (Oct 16), then switch to Wobbles' recorded sessions. Nothing here needs the rover.
+
+3. **Session IO.** "Create `2027_build/src/rover_camera_ai/session_io/` to validate and load a session folder (manifest, `rgb/` + `depth/` or SVO, `intrinsics.yaml`, `zed_baseline.tum`, `tracking_status.csv`). Add a synthetic fixture generator, clearly labelled as synthetic, so it works without a real recording." *Waits on: the manifest schema frozen at C0 (shared prompt 2).*
+4. **Baseline benchmark.** "Write one command that takes a session and regenerates `outputs/<session_id>/<experiment_id>/` with a ZED-baseline report: tracked-frame fraction, discontinuities, relocalization events, runtime, and map coverage. Record the session id, calibration id, code revision, and parameters in `metrics.json`."
+5. **Back-projection and BEV.** "Implement calibration-aware depth back-projection into a point cloud, and a BEV occupancy grid with free, occupied, unknown, and confidence. Test the geometry on a synthetic scene with known planes." *This is the docs2 local grid (P2, P4, P5), so it is checked at G2.*
+6. **Feature front-end.** *Not this month* (research VSLAM is out of scope in docs2). "Implement an ORB matching baseline with geometric verification (essential matrix or PnP with RANSAC). Report inlier statistics. No learned features yet."
+7. **Loop closure and pose graph.** *Not this month.* "Add place-recognition candidates, geometric loop verification, and pose-graph optimization that writes `pose_graph.g2o`. Keep the visual and geometric evidence for every accepted loop in `loop_closures.json`. Compare the optimized trajectory against the ZED baseline with evo."
+8. **Dense map.** *Not this month; may become Phase 4 option C (from Nov 2).* "Build a dense colored map (`dense_map.ply`) from the optimized poses, plus a script that renders review images."
+9. **Semantic/dynamic masking.** *Stretch goal, after G3 Oct 30.* "Move the camera-independent detector utilities out of `object_detection.py` into `rover_camera_ai`. Use the detections to keep likely-dynamic pixels out of SLAM landmarks and the BEV map. Compare depth-only and masked results, and report every case where masking removed a real static obstacle."
+10. **Learned features (optional).** *Not this month.* "If runtime allows, compare SuperPoint/LightGlue against ORB on the same recorded routes. Claim an improvement only if the metrics show one."
+
+### Phase 3: bundle gate (G1 Fri Oct 16 to G2 Fri Oct 23)
+
+11. **Visual vs visual-inertial (start after G1 Oct 16, due G2 Oct 23).** "Using the IMU-qualified session from data synthesis, compare visual-only and visual-inertial trajectories on fast motion, turns, and low-texture segments." *Waits on: Wobbles prompt 11.*
+12. **Map export for the handoff (due G2 Oct 23).** "Write an exporter from the BEV grid (and, later, the dense map) to `OccupancyGrid` / `PointCloud2`, with frame, resolution, confidence, and provenance metadata in the format the integration handoff contract expects." *Waits on: Bedrawn's contract draft (Bedrawn prompt 3). Bedrawn prompt 9 waits on this.*
+
+### Phase 5: GPS (not this month; date set at the Oct 30 review)
+
+13. **GPS as a sparse constraint.** "Add GPS as a sparse global constraint in the offline pose graph and test cross-session relocalization. Do not use GPS as high-rate local motion." *Waits on: Wobbles prompt 12 and prompt 7.*
+
+Prompts 3 to 5 cover the [first independent milestone](#first-independent-milestone).
