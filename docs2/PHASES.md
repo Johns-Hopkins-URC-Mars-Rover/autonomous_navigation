@@ -71,14 +71,28 @@ Made by `rover_bringup/scripts/svo_to_frames.py` (R5) from any SVO, without ROS.
 ```text
 frames/<session_id>/
   intrinsics.json   # {"fx", "fy", "cx", "cy", "width", "height"} of the rectified left image = depth image
+  mount.json        # T_base_cam: base_link -> left camera, 4x4, camera BODY axes (X fwd, Y left, Z up).
+                    #   = manifest base_link -> zed_camera_link (placeholder for now) composed with the
+                    #   SDK's zed_camera_link -> left camera offset. Has "placeholder": true/false.
   frames.csv        # frame_idx, t_ns, tracking_state, tx, ty, tz, qx, qy, qz, qw
-                    #   pose of the LEFT CAMERA in the ZED world frame (Z up, X forward), IMU fusion on.
-                    #   Pose columns empty when tracking_state != OK.
+                    #   T_world_cam: pose of the LEFT CAMERA, BODY axes, in the ZED world frame
+                    #   (Z up, X forward), IMU fusion on. Pose columns empty when tracking_state != OK.
   depth/000000.npy  # float32 H×W metres; NaN / +inf / -inf kept exactly as the SDK gives them
   rgb/000000.png    # optional, left image (BGR), only when --rgb is passed
 ```
 
 Default stride: every 3rd frame (about 10 Hz from a 30 fps SVO). Sessions are stored outside Git, like SVOs.
+
+**Frames, so the code works for any camera mount.** Offline, `odom` is defined as `base_link` at the first frame with a valid pose (frame 0), matching the live wrapper. Each frame's camera pose in `odom` and the conversion from pixels to `odom` points are:
+
+```text
+T_odom_cam(t) = T_base_cam · T_world_cam(0)⁻¹ · T_world_cam(t)          # 4x4, camera body axes
+p_opt         = depth · K⁻¹ · [u, v, 1]ᵀ                                  # optical axes: X right, Y down, Z fwd
+p_odom        = T_odom_cam(t) · R_body_opt · p_opt
+R_body_opt    = [[0, 0, 1], [-1, 0, 0], [0, -1, 0]]                       # optical -> body, fixed
+```
+
+`T_base_cam` comes only from `mount.json`. No other number about the mount appears in `core/`, so a new rover changes one file.
 
 ### `core/` function signatures (Phase 2 internal, frozen at C0 so its tasks can be split)
 
@@ -88,6 +102,7 @@ These let P2, P3, P4 and P5 be written by different people at the same time, eac
 # rover_perception/core/points.py   (P2)
 depth_to_points(depth: np.ndarray, K: Intrinsics, T_odom_cam: np.ndarray, stride: int = 4,
                 min_m: float = 0.3, max_m: float = 8.0) -> np.ndarray      # (N, 3) float32 in odom
+#   T_odom_cam: 4x4, camera BODY axes -> odom (formula above); the function applies R_body_opt itself.
 
 # rover_perception/core/ground.py   (P3)
 split_ground(points: np.ndarray, params: GroundParams) -> GroundSplit      # .ground (N,3), .obstacle (M,3), .plane (a,b,c,d)

@@ -1,8 +1,13 @@
-# Output Contract for the Algorithm Team (draft v0.1)
+# Output Contract for the Algorithm Team (draft v0.2, names frozen at C0)
 
 This is what our sensor-fusion and perception stack publishes. The algorithm (planning/control) team builds against this, live or from our recorded bags. Target: **v1.0 frozen by October 30, 2026** (task H2).
 
-Units, axes, timestamps, and invalid-depth encoding follow `docs/contract/SENSOR_DATA_CONTRACT.md` §1 (SI units, REP 103 axes, acquisition-time stamps, `NaN` / `±inf` depth). Changing a topic name, frame, unit, or label code after v1.0 means bumping the version and telling the algorithm team.
+Units, axes, timestamps, and invalid-depth encoding follow `docs/contract/SENSOR_DATA_CONTRACT.md` §1 (SI units, REP 103 axes, acquisition-time stamps, `NaN` / `±inf` depth).
+
+**What is frozen and how it changes.** Topic names, message types, frame roles and label codes are frozen at C0 (Mon Oct 12). Values marked **[placeholder]** are dummies that let code run while the rover is still changing. They are listed in §10 and replaced later without a version bump. Other changes follow these rules:
+
+- After C0, a change needs agreement from the person who consumes it.
+- After G2 (Fri Oct 23), it also needs a version bump and a message to the algorithm team.
 
 ## 1. Topics
 
@@ -15,11 +20,14 @@ All `/rover/...` names are ours and stay stable. If the pinned ZED wrapper publi
 | `/rover/odom` | `nav_msgs/Odometry` | `odom` → child `base_link` | camera rate (15–30 Hz) | Smooth visual-inertial pose and velocity. Use this for local control. |
 | `/rover/pose` | `geometry_msgs/PoseWithCovarianceStamped` | `map` | camera rate | Pose corrected by ZED area memory. May jump on relocalization. |
 | `/rover/imu` | `sensor_msgs/Imu` | `zed_imu_link` | ≥ 100 Hz | Accelerations (m/s²), angular rates (rad/s), fused orientation. |
-| `/rover/camera/rgb/image` | `sensor_msgs/Image` | left optical frame | camera rate | Rectified left colour image. |
-| `/rover/camera/rgb/camera_info` | `sensor_msgs/CameraInfo` | left optical frame | camera rate | Intrinsics for the image above. |
-| `/rover/camera/depth/image` | `sensor_msgs/Image` (32FC1, metres) | left optical frame | camera rate | Depth registered to the RGB image. |
-| `/rover/camera/depth/camera_info` | `sensor_msgs/CameraInfo` | left optical frame | camera rate | Intrinsics for depth. |
+| `/rover/camera/rgb/image` | `sensor_msgs/Image` | `<left optical frame>` **[placeholder]** | camera rate | Rectified left colour image. |
+| `/rover/camera/rgb/camera_info` | `sensor_msgs/CameraInfo` | `<left optical frame>` | camera rate | Intrinsics for the image above. |
+| `/rover/camera/depth/image` | `sensor_msgs/Image` (32FC1, metres) | `<left optical frame>` | camera rate | Depth registered to the RGB image. |
+| `/rover/camera/depth/camera_info` | `sensor_msgs/CameraInfo` | `<left optical frame>` | camera rate | Intrinsics for depth. |
+| `/rover/tracking/status` | wrapper's tracking-status message **[placeholder]** type | — | camera rate | Positional-tracking state (OK, SEARCHING, LOST, …). Feeds `status/ok` and the failure table. |
 | `/tf`, `/tf_static` | `tf2_msgs/TFMessage` | see §2 | — | Transform tree. |
+
+**Frame names in code.** Code may hardcode only `map`, `odom` and `base_link`. Every other frame (camera, optical, IMU) is read from the message's `header.frame_id` and resolved through TF. Then a wrapper rename or a new camera mount changes no code.
 
 ### Perception (from `rover_perception`)
 
@@ -34,6 +42,20 @@ All `/rover/...` names are ours and stay stable. If the pinned ZED wrapper publi
 | `/rover/status/ok` | `std_msgs/Bool` | — | ≥ 5 Hz | `true` only when tracking is OK, depth is usable, and outputs are fresh. |
 | `/diagnostics` | `diagnostic_msgs/DiagnosticArray` | — | 1 Hz | Details behind `ok`: tracking state, valid-depth fraction, grid age, latencies. |
 
+**Output timestamps.** Every perception output carries the `header.stamp` of the depth frame it was computed from, not the time it was published. Consumers look up TF at that stamp.
+
+### QoS **[placeholder]**
+
+| Topics | Reliability | Durability | Depth |
+| --- | --- | --- | --- |
+| Camera images and `camera_info` | reliable | volatile | 5 |
+| `/rover/imu` | reliable | volatile | 50 |
+| `/rover/odom`, `/rover/pose`, `/rover/tracking/status` | reliable | volatile | 10 |
+| `/rover/perception/*`, `/rover/status/ok` | reliable | volatile | 5 |
+| `/tf_static` | reliable | transient local | 1 (ROS standard) |
+
+These are starting values. Measure them against the pinned wrapper's defaults and the rover's CPU load (P10) before v1.0.
+
 ### Grid geometry (starting values; final values in v1.0)
 
 | Property | Value |
@@ -41,7 +63,7 @@ All `/rover/...` names are ours and stay stable. If the pinned ZED wrapper publi
 | Size | 10 m × 10 m, rolling, centred on the rover |
 | Cell size | 0.05 m |
 | Frame | `odom` (never jumps; moves with the rover in steps) |
-| Height band counted as obstacle | 0.05 m above the fitted floor up to rover height + 0.10 m |
+| Height band counted as obstacle | 0.05 m above the fitted floor up to rover height + 0.10 m (rover height from `docs/contract/rover_geometry.yaml`, **[placeholder]**) |
 | Valid depth range | 0.3 – 8.0 m |
 
 ## 2. TF tree and ownership
@@ -55,10 +77,12 @@ map → odom → base_link → zed_camera_link → … → zed_left_camera_frame
 | --- | --- | --- |
 | `map → odom` | ZED wrapper (area memory) | Only publisher. Can jump on relocalization. |
 | `odom → base_link` | ZED wrapper (visual-inertial tracking) | Only publisher. Smooth. |
-| `base_link → zed_camera_link` | `robot_state_publisher` from `rover_description` | Measured mount (task F1). |
+| `base_link → zed_camera_link` | `robot_state_publisher` from `rover_description` | From `docs/contract/rover_geometry.yaml`. **[placeholder]** until the tape measurement (task F1). |
 | `zed_camera_link → camera/IMU frames` | ZED wrapper / ZED xacro (factory calibration) | Not duplicated in our URDF. |
 
 `base_link` is at floor level under the rover's turning centre. **[verify]** the optical-frame name on the pinned wrapper tag.
+
+**If area memory is turned off (decision F7, G1):** `map → odom` is published as a fixed identity, and `/rover/pose` equals the `odom` pose. **[placeholder]**: check how the pinned wrapper behaves with area memory off, then update this line.
 
 **Rule for consumers:** use `odom` for local planning and control. Use `map` only for things that must stay put across a session, and expect it to jump.
 
@@ -133,3 +157,32 @@ Added after the October 30 handoff by Phase 4 (tasks M1–M6). Nothing in v1.0 d
 | `maps/<map_id>/map_manifest.json` | JSON | — | Source sessions, resolution, origin, software versions, alignment check result |
 
 Rules: the local grid in `odom` (§1) stays the input for local control; the persistent map is for "what does this area look like" and may be corrected after relocalization. Saved maps are stored outside Git.
+
+## 10. Placeholders and mount independence
+
+The rover is still changing, so geometry and some wrapper details are dummies for now. Code is written so that replacing a dummy means editing one file, not changing algorithms.
+
+### Rules
+
+1. **No algorithm hardcodes rover geometry.** Camera position, tilt, rover size and IMU offset are inputs:
+    - live code reads them from TF;
+    - offline code reads them from the session manifest or the frame dump's `mount.json`;
+    - both come from [`docs/contract/rover_geometry.yaml`](../docs/contract/rover_geometry.yaml).
+2. **Gravity and the floor are measured, not assumed.** Ground fitting uses the IMU gravity direction and the depth data, never a fixed camera height or pitch.
+3. **Outputs are placed through TF.** The grid lives in `odom`; `scan` and `objects` are transformed into `base_link` at the input stamp. A new mount changes those transforms, not the code.
+4. **Tested on more than one mount.** Every geometry-dependent unit test also runs on the `test_mounts` in `rover_geometry.yaml`: rear and yawed, tilted down, and rolled to the side. A test that passes only on the default mount counts as failing.
+
+### Placeholder register
+
+Each row is replaced later, without a contract version bump, by the owner when its trigger happens.
+
+| Placeholder | Current dummy | Where it lives | Replaced by | Trigger |
+| --- | --- | --- | --- | --- |
+| Camera mount `base_link → zed_camera_link` | x 0.20, y 0, z 0.30 m; no rotation | `rover_geometry.yaml` | Wobbles (F1) | Rover design settles; tape-measure session |
+| Footprint | 0.60 × 0.40 × 0.40 m, centred on `base_link` | `rover_geometry.yaml` | Bedrawn | Same session |
+| Rover height in the obstacle band | footprint height | `rover_geometry.yaml` | Bedrawn | Same session |
+| Optical frame name | `<left optical frame>` | §1 | Wobbles | Pinned wrapper tag checked (S4) |
+| Tracking-status message type | wrapper's type, unnamed | §1 | Wobbles | Pinned wrapper tag checked |
+| QoS values | §1 QoS table | §1 | Bedrawn | P10 load measurements |
+| `map → odom` with area memory off | identity | §2 | Wobbles | Decision F7 at G1 |
+| Grid size, cell size, wall thresholds | §1 grid geometry, §3 | §1, §3 | Hedgie | G2 |

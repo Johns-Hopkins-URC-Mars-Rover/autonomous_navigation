@@ -1,0 +1,43 @@
+# Rover geometry: the single source for camera mount and footprint values.
+#
+# EVERY VALUE BELOW IS A PLACEHOLDER (dummy, not measured). The rover is still
+# changing, so these exist only so code and tests can run. Replace them with
+# tape measurements (task F1) once the rover design settles, then set
+# placeholder: false and bump geometry_version. See the placeholder register in
+# docs2/OUTPUT_CONTRACT.md section 10.
+#
+# Rule: no algorithm hardcodes these numbers. Live code reads the mount from TF
+# (base_link -> zed_camera_link); offline code reads it from the session
+# manifest or the frame dump's mount.json. Both are generated from this file.
+#
+# Units: metres and radians. Axes: REP 103 (X forward, Y left, Z up).
+
+geometry_version: 0
+placeholder: true
+
+base_link:
+  # Floor level, under the rover's turning centre.
+  description: "floor level under the turning centre"
+
+camera_mount:            # base_link -> zed_camera_link
+  translation_m: {x: 0.20, y: 0.00, z: 0.30}
+  rotation_rpy_rad: {roll: 0.0, pitch: 0.0, yaw: 0.0}
+
+footprint:               # axis-aligned box around base_link
+  length_m: 0.60
+  width_m: 0.40
+  height_m: 0.40
+  centre_offset_m: {x: 0.00, y: 0.00}   # footprint centre relative to base_link
+
+# Extra mounts that every geometry-dependent test must also pass with, so
+# the algorithms keep working wherever the camera ends up.
+test_mounts:
+  - name: rear_high_yawed
+    translation_m: {x: -0.10, y: 0.15, z: 0.80}
+    rotation_rpy_rad: {roll: 0.0, pitch: 0.0, yaw: 0.5236}     # 30 deg left
+  - name: tilted_down
+    translation_m: {x: 0.25, y: 0.00, z: 1.00}
+    rotation_rpy_rad: {roll: 0.0, pitch: 0.3491, yaw: 0.0}     # 20 deg nose-down
+  - name: rolled_side
+    translation_m: {x: 0.00, y: -0.20, z: 0.50}
+    rotation_rpy_rad: {roll: 0.1745, pitch: 0.1745, yaw: -0.7854}  # 10 deg roll, 10 deg pitch, 45 deg right

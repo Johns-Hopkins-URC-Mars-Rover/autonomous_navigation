@@ -79,6 +79,7 @@ This is the docs2 form of the 2027_build chain `map -> odom -> base_link -> came
 - `base_link` is at floor level under the rover's turning centre.
 - **One publisher per edge.** No `robot_localization`, `slam_toolbox`, AMCL or GPS filter may also publish `map → odom` (2027_build rule; docs2 D3, D4). Phase 4 option B would change this and must revise D4 first.
 - Every recorded session stores the static `base_link → zed_camera_link` transform in its manifest (§4), so recordings stay interpretable if the mount changes later.
+- **The mount is a placeholder for now.** The rover is still changing, so its values come from [`rover_geometry.yaml`](rover_geometry.yaml) (dummy, `placeholder: true`). A session recorded with the dummy mount says so in its manifest. When the real mount is measured, old sessions can be re-processed by swapping the transform; no algorithm changes. Algorithms must work for any mount (see `docs2/OUTPUT_CONTRACT.md` §10).
 
 ---
 
@@ -92,7 +93,7 @@ This is the docs2 form of the 2027_build chain `map -> odom -> base_link -> came
 | IMU | `/rover/imu` | F3 IMU checks, P3 gravity direction |
 | Pose | `/rover/odom`, `/rover/pose` | Phase 2 grid placement, F5 fusion report |
 | Transforms | `/tf`, `/tf_static` | everything |
-| Tracking status | wrapper's positional-tracking status topic (**[verify]** name on the pinned tag) | F6 failure table, P8 health |
+| Tracking status | `/rover/tracking/status`, remapped from the wrapper's tracking-status topic (message type **[placeholder]** until the pinned tag is checked) | F6 failure table, P8 health |
 | Diagnostics | `/diagnostics` | sensor-health evidence |
 | Perception (handoff bags only, H3) | `/rover/perception/*`, `/rover/status/ok` | algorithm team |
 

@@ -34,9 +34,11 @@
     {
       "parent": "base_link",
       "child": "zed_camera_link",
-      "translation_m": ["<x>", "<y>", "<z>"],
-      "rotation_xyzw": ["<qx>", "<qy>", "<qz>", "<qw>"],
-      "source": "task F1 tape measurement"
+      "translation_m": [0.20, 0.0, 0.30],
+      "rotation_xyzw": [0.0, 0.0, 0.0, 1.0],
+      "source": "rover_geometry.yaml",
+      "geometry_version": 0,
+      "placeholder": true
     }
   ],
   "tracking": {
