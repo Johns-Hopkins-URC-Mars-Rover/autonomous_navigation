@@ -1,0 +1,97 @@
+{
+  "_comment": "Example manifest for docs/contract/SENSOR_DATA_CONTRACT.md section 4. Values in <angle brackets> are placeholders to be filled from the real setup; they are not measurements.",
+  "schema_version": "1.0",
+  "session_id": "2026-10-08_b_hallway-loop",
+  "reference_session": "b",
+  "camera": {
+    "model": "<ZED model, [verify]>",
+    "device_id": "<serial or anonymised id>",
+    "resolution": "HD720",
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "depth_mode": "<depth mode set in zed_overrides.yaml>"
+  },
+  "intrinsics": {
+    "fx": "<from SDK>",
+    "fy": "<from SDK>",
+    "cx": "<from SDK>",
+    "cy": "<from SDK>",
+    "width": 1280,
+    "height": 720
+  },
+  "conventions": {
+    "units": "SI",
+    "body_axes": "REP103_X_fwd_Y_left_Z_up",
+    "optical_axes": "REP103_optical_X_right_Y_down_Z_fwd",
+    "zed_world_frame": "RIGHT_HANDED_Z_UP_X_FWD",
+    "quaternion_order": "xyzw",
+    "timestamp_source": "acquisition_time_TIME_REFERENCE_IMAGE",
+    "time_unit": "ns",
+    "invalid_depth": "NaN_and_plus_minus_inf_preserved"
+  },
+  "static_transforms": [
+    {
+      "parent": "base_link",
+      "child": "zed_camera_link",
+      "translation_m": ["<x>", "<y>", "<z>"],
+      "rotation_xyzw": ["<qx>", "<qy>", "<qz>", "<qw>"],
+      "source": "task F1 tape measurement"
+    }
+  ],
+  "tracking": {
+    "imu_fusion": true,
+    "area_memory": true,
+    "area_map_file": null
+  },
+  "files": {
+    "svo": {
+      "path": "recording.svo",
+      "sha256": "<checksum>"
+    },
+    "bag": {
+      "path": "bag/",
+      "storage": "mcap",
+      "sha256": "<checksum of bag folder contents>"
+    },
+    "trajectory_tum": {
+      "path": "trajectory.tum",
+      "sha256": "<checksum>"
+    }
+  },
+  "time": {
+    "start_t_ns": "<int>",
+    "end_t_ns": "<int>",
+    "duration_s": "<float>"
+  },
+  "software": {
+    "os": "Ubuntu 22.04",
+    "jetpack_or_cuda": "<from S6 table>",
+    "zed_sdk": "<from S6 table>",
+    "zed_ros2_wrapper_tag": "<from S6 table>",
+    "ros_distro": "humble",
+    "python": "<from S6 table>",
+    "git_commit": "<repo commit used to record>"
+  },
+  "calibration_version": "<ZED factory calibration id>",
+  "availability": {
+    "imu": true,
+    "gps": false
+  },
+  "tracking_timeline": [
+    {
+      "state": "OK",
+      "start_t_ns": "<int>",
+      "end_t_ns": "<int>"
+    }
+  ],
+  "route": {
+    "description": "Hallway loop that returns to a floor mark",
+    "environment": "indoor",
+    "lighting": "<notes>",
+    "start_mark": "<floor mark id>",
+    "end_mark": "<same floor mark id>",
+    "path_length_m": "<measured or estimated>"
+  },
+  "failure_events": []
+}

@@ -93,7 +93,7 @@ Phase mapping: wrapper configuration and TF are **Phase 1**, `rover_perception` 
 ## How this relates to the older docs
 
 - `2027_build/docs/` targets Ubuntu 24.04 / Jazzy and includes a long research VSLAM track. For October we deliberately narrow to working sensor fusion and scene labels on 22.04 / Humble.
-- `docs/SENSOR_DATA_CONTRACT.md` is still the reference for units, axes, timestamps, and the session-folder format. [OUTPUT_CONTRACT.md](OUTPUT_CONTRACT.md) builds on it and adds the perception outputs it lacked.
+- `docs/contract/SENSOR_DATA_CONTRACT.md` is still the reference for units, axes, timestamps, and the session-folder format. [OUTPUT_CONTRACT.md](OUTPUT_CONTRACT.md) builds on it and adds the perception outputs it lacked.
 - `DOCS.md` describes the legacy prototype, whose wall, hallway, and cluster heuristics are the starting point for task P5 in the work breakdown.
 
 Items marked **[verify]** in these docs depend on the exact ZED wrapper release or the rover hardware and must be confirmed on the real setup, not assumed.

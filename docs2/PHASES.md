@@ -58,7 +58,7 @@ Every arrow between phases is one of these. "Stand-in" is what you use until the
 | I1 | Camera and IMU topics | Phase 1 → 2, 3, 4 | `/rover/camera/rgb/*`, `/rover/camera/depth/*`, `/rover/imu` (contract §1) | ZED wrapper with default settings (Phase 0), or SVO replay through the wrapper | C0 Oct 12 (names), G1 (tuned) |
 | I2 | Pose and TF | Phase 1 → 2, 3, 4 | `/rover/odom`, `/rover/pose`, `/tf`, `/tf_static` (contract §1–2) | `fake_pose` node (R6) that replays a TUM trajectory as `/rover/odom` + `odom → base_link`; URDF with an identity camera mount (so the TUM camera pose stands in for `base_link`) | G1 Oct 16 |
 | I3 | Frame dumps (no ROS) | Phase 3 → 2 (and 4) | Folder format below | Phase 2 writes synthetic dumps for unit tests (flat floor, wall at 2 m, box) | C0 Oct 12, sessions (a) and (b) |
-| I4 | Reference sessions and bags | Phase 3 → 1, 2, 4 | SVO + rosbag2 MCAP + manifest (`docs/SENSOR_DATA_CONTRACT.md` §4) | Legacy `main.py --save-svo` SVO files from Phase 0 | G1 Oct 16 (ROS bags) |
+| I4 | Reference sessions and bags | Phase 3 → 1, 2, 4 | SVO + rosbag2 MCAP + manifest (`docs/contract/SENSOR_DATA_CONTRACT.md` §4) | Legacy `main.py --save-svo` SVO files from Phase 0 | G1 Oct 16 (ROS bags) |
 | I5 | Fusion facts | Phase 1 → 2, 3 | Fusion report: latency, failure table (F6), area-memory decision (F7) | Thresholds in contract §4 (0.5 s stale, 0.3 m jump) | G1 Oct 16 |
 | I6 | Perception topics | Phase 2 → 3, 4, algorithm team | `/rover/perception/*`, `/rover/status/ok`, `/diagnostics` (contract §1, §3) | `fake_perception` node (R6) that publishes a fixed synthetic grid, class grid and scan | G2 Oct 23 |
 | I7 | Launch includes | Phases 1, 2, 4 → Phase 3 | Each phase ships one `*.launch.py` that starts its nodes and takes `use_sim_time` | Empty launch files from S5 | each phase's gate |
@@ -66,7 +66,7 @@ Every arrow between phases is one of these. "Stand-in" is what you use until the
 
 ### I3 frame-dump format (Phase 3 writes, Phase 2 and 4 read)
 
-Made by `rover_bringup/scripts/svo_to_frames.py` (R5) from any SVO, without ROS. Units and axes follow `docs/SENSOR_DATA_CONTRACT.md` §1.
+Made by `rover_bringup/scripts/svo_to_frames.py` (R5) from any SVO, without ROS. Units and axes follow `docs/contract/SENSOR_DATA_CONTRACT.md` §1.
 
 ```text
 frames/<session_id>/
@@ -214,7 +214,7 @@ classify(occupancy: np.ndarray, obstacle: np.ndarray, resolution: float, params:
 | Wrapper topics | Phase 1 (I1, I2) | SVO replay through the wrapper |
 | `fusion.launch.py`, `perception.launch.py` | Phases 1, 2 (I7) | empty launch files from S5 |
 | Perception topics | Phase 2 (I6) | `fake_perception` (R6) |
-| Session format | `docs/SENSOR_DATA_CONTRACT.md` §4, `docs/contract/session_manifest.example.json` | — |
+| Session format | `docs/contract/SENSOR_DATA_CONTRACT.md` §4, `docs/contract/session_manifest.example.json` | — |
 
 ### Existing code that feeds this phase
 
@@ -223,7 +223,7 @@ classify(occupancy: np.ndarray, obstacle: np.ndarray, resolution: float, params:
 | `main.py --save-svo` / `--svo` | Early recordings and SVO replay (R4 early option) |
 | `main.py` `_build_init_params` (`set_from_svo_file`, `svo_real_time_mode = False`) | How to open an SVO without ROS in `svo_to_frames.py` (R5) |
 | `main.py` TUM export | Trajectory that `fake_pose` replays (R6) |
-| `docs/SENSOR_DATA_CONTRACT.md` §4 + example manifest | Manifest writer (R2) |
+| `docs/contract/SENSOR_DATA_CONTRACT.md` §4 + example manifest | Manifest writer (R2) |
 
 ### Outputs
 

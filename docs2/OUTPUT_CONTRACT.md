@@ -2,7 +2,7 @@
 
 This is what our sensor-fusion and perception stack publishes. The algorithm (planning/control) team builds against this, live or from our recorded bags. Target: **v1.0 frozen by October 30, 2026** (task H2).
 
-Units, axes, timestamps, and invalid-depth encoding follow `docs/SENSOR_DATA_CONTRACT.md` §1 (SI units, REP 103 axes, acquisition-time stamps, `NaN` / `±inf` depth). Changing a topic name, frame, unit, or label code after v1.0 means bumping the version and telling the algorithm team.
+Units, axes, timestamps, and invalid-depth encoding follow `docs/contract/SENSOR_DATA_CONTRACT.md` §1 (SI units, REP 103 axes, acquisition-time stamps, `NaN` / `±inf` depth). Changing a topic name, frame, unit, or label code after v1.0 means bumping the version and telling the algorithm team.
 
 ## 1. Topics
 
