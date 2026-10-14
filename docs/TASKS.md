@@ -1,6 +1,6 @@
 # Work Breakdown
 
-Every task the October 30 milestone needs, plus Phase 4 mapping after it, grouped into six tracks. Owners are not assigned yet. Each task lists what it produces, how we know it is done, and what it waits on. Dates are in [TIMELINE.md](TIMELINE.md). Inputs, outputs and stand-ins for each phase are in [PHASES.md](PHASES.md).
+Every task the October 30 milestone needs, plus Phase 4 mapping after it, grouped into six tracks. Owners are not assigned yet. Each task lists what it produces, how we know it is done, and what it waits on. Dates, inputs, outputs and stand-ins for each phase are in [PLAN.md](PLAN.md).
 
 | Track | Purpose | Phase |
 | --- | --- | --- |
@@ -11,7 +11,7 @@ Every task the October 30 milestone needs, plus Phase 4 mapping after it, groupe
 | **H** Handoff | One launch command, a frozen contract, test coverage, and the demo | 3 (H4 shared with 2) |
 | **M** Mapping | A persistent labelled map in `map`, saved and reloadable | 4 (after Oct 30) |
 
-Phases 1, 2 and 3 run at the same time from Oct 10. A task's "Needs" column lists the real producer. If that is not ready yet, use the stand-in from [PHASES.md](PHASES.md) instead of waiting.
+Phases 1, 2 and 3 run at the same time from Oct 10. A task's "Needs" column lists the real producer. If that is not ready yet, use the stand-in from [PLAN.md](PLAN.md) instead of waiting.
 
 Code lives in the ROS 2 workspace at `2027_build/` (as in the older plan), in three new packages, plus a fourth for Phase 4:
 
@@ -32,7 +32,7 @@ Keep perception logic in `core/` with no ROS imports so it can be unit-tested on
 
 | ID | Task | Output | Done when | Needs |
 | --- | --- | --- | --- | --- |
-| S1 | Pick and prepare the rover computer: Jetson on JetPack 6 (Ubuntu 22.04) or an x86 Ubuntu 22.04 machine with an NVIDIA GPU. A second 22.04 laptop for RViz is useful. | Hardware/OS record in [SETUP_UBUNTU_22_04.md](SETUP_UBUNTU_22_04.md) | `lsb_release -a` says 22.04; GPU visible (`nvidia-smi` or `tegrastats`) | — |
+| S1 | Pick and prepare the rover computer: Jetson on JetPack 6 (Ubuntu 22.04) or an x86 Ubuntu 22.04 machine with an NVIDIA GPU. A second 22.04 laptop for RViz is useful. | Hardware/OS record in [SETUP.md](SETUP.md) | `lsb_release -a` says 22.04; GPU visible (`nvidia-smi` or `tegrastats`) | — |
 | S2 | Install ROS 2 Humble. | Working `ros2` CLI | Demo talker/listener works; `ros2 doctor` has no errors | S1 |
 | S3 | Install the ZED SDK that matches the CUDA / JetPack version, plus its Python API. | SDK installed | ZED Diagnostic passes with the camera; legacy `main.py --no-display` runs on this machine | S1 |
 | S4 | Build `zed-ros2-wrapper` at a **pinned release tag** that matches the SDK major version. | Wrapper built in the workspace | `ros2 launch zed_wrapper zed_camera.launch.py camera_model:=<model>` shows RGB, depth, and IMU in RViz | S2, S3 |
@@ -50,7 +50,7 @@ The ZED SDK performs the visual-inertial fusion (README decision D2). Our job is
 | F3 | Validate the IMU: rate and jitter, monotonic timestamps, frame id, 5-minute static test (gravity magnitude, gyro bias), axis test (tilt nose-down, roll left, yaw left and check signs against REP 103). | `scripts/imu_check.py` and an IMU report | All checks in the acceptance table below pass | F2, R1 |
 | F4 | Check timing: IMU and image stamps use the same clock; measure capture-to-publish latency for depth and odometry. | Timing section of the fusion report | Latency measured and within target; no stamp goes backwards in a 10-minute run | F2 |
 | F5 | Measure odometry quality with IMU fusion **on vs off** on the same recordings (replay one SVO twice). Tests: static drift, closed loop back to a floor mark, fast turns and shaking. | Fusion report with numbers and trajectory plots (`evo` on TUM exports) | Fusion-on meets the targets below and is no worse than fusion-off on every test | F1–F3, R4 |
-| F6 | Characterise failures: cover the lens for 2 s, blank wall, dark room, fast spin. Record what `/odom`, TF, and tracking status do during loss and after recovery (freeze, IMU-only, or jump). | Failure table in [OUTPUT_CONTRACT.md](OUTPUT_CONTRACT.md) | Each failure case has observed behaviour and a recovery-jump size | F5 |
+| F6 | Characterise failures: cover the lens for 2 s, blank wall, dark room, fast spin. Record what `/odom`, TF, and tracking status do during loss and after recovery (freeze, IMU-only, or jump). | Failure table in [CONTRACT.md](CONTRACT.md) | Each failure case has observed behaviour and a recovery-jump size | F5 |
 | F7 | Decide area-memory use for the demo (on or off) and document how `map → odom` behaves when the ZED relocalizes. | Decision recorded in the contract | Algorithm team acknowledges: control uses `odom`, not `map` | F5 |
 
 ## R: Recording and replay
@@ -58,11 +58,11 @@ The ZED SDK performs the visual-inertial fusion (README decision D2). Our job is
 | ID | Task | Output | Done when | Needs |
 | --- | --- | --- | --- | --- |
 | R1 | Recording script: rosbag2 in MCAP format with a fixed topic list, plus an SVO recording of the same run. | `rover_bringup/scripts/record_session.sh` | One command records both; the bag info shows every listed topic | S4 |
-| R2 | Session manifest writer following `docs/contract/SENSOR_DATA_CONTRACT.md` §4, with the bag folder added. | `scripts/write_manifest.py` | Manifest validates against the example; checksums match | R1 |
+| R2 | Session manifest writer following [CONTRACT.md](CONTRACT.md) §12, with the bag folder added. | `scripts/write_manifest.py` | Manifest validates against the example; checksums match | R1 |
 | R3 | Replay path: `ros2 bag play --clock` with `use_sim_time:=true`, and SVO replay through the wrapper. | Replay instructions and a launch argument | Perception produces the same output topics from replay as live | R1, P1 |
 | R4 | Reference sessions (about 2–5 minutes each): (a) static, (b) hallway loop back to a floor mark, (c) cluttered room with boxes and chairs, (d) fast turns and shaking, (e) deliberate lens cover. | Sessions stored outside Git; paths and checksums listed in a shared index | Every F and P test can run from these without the rover | R1, R2 |
-| R5 | Frame dumper: read an SVO with the ZED Python API (no ROS) and write the frame-dump folder defined in [PHASES.md](PHASES.md) (I3): intrinsics, per-frame camera pose and tracking state, depth `.npy`, optional RGB. | `rover_bringup/scripts/svo_to_frames.py`; dumps of sessions (a) and (b) by C0 | Perception `core/` loads a dump and back-projects a frame without ROS; `NaN`/`±inf` preserved | S3, legacy SVO sessions |
-| R6 | Stand-in publishers: `fake_pose` replays a TUM trajectory as `/rover/odom` + `odom → base_link`; `fake_perception` publishes a fixed synthetic `grid`, `class_grid`, `confidence`, `scan` and `status/ok` with contract names, frames and label codes. | `rover_bringup/scripts/fake_pose.py`, `fake_perception.py` | Both run by C0; RViz shows them; topic names match [OUTPUT_CONTRACT.md](OUTPUT_CONTRACT.md) exactly | S2, S5 |
+| R5 | Frame dumper: read an SVO with the ZED Python API (no ROS) and write the frame-dump folder defined in [PLAN.md](PLAN.md) (I3): intrinsics, per-frame camera pose and tracking state, depth `.npy`, optional RGB. | `rover_bringup/scripts/svo_to_frames.py`; dumps of sessions (a) and (b) by C0 | Perception `core/` loads a dump and back-projects a frame without ROS; `NaN`/`±inf` preserved | S3, legacy SVO sessions |
+| R6 | Stand-in publishers: `fake_pose` replays a TUM trajectory as `/rover/odom` + `odom → base_link`; `fake_perception` publishes a fixed synthetic `grid`, `class_grid`, `confidence`, `scan` and `status/ok` with contract names, frames and label codes. | `rover_bringup/scripts/fake_pose.py`, `fake_perception.py` | Both run by C0; RViz shows them; topic names match [CONTRACT.md](CONTRACT.md) exactly | S2, S5 |
 
 Early option: before ROS is ready, record sessions (a)–(e) as SVO files with the legacy `main.py --save-svo`. R5 turns them into frame dumps, so perception `core/` work can start immediately.
 
@@ -86,7 +86,7 @@ Early option: before ROS is ready, record sessions (a)–(e) as SVO files with t
 | ID | Task | Output | Done when | Needs |
 | --- | --- | --- | --- | --- |
 | H1 | One launch command with arguments for live / SVO / bag replay and for turning YOLO on or off. | `ros2 launch rover_bringup rover.launch.py` | Cold start to all outputs in under 60 s | F2, P1–P9 |
-| H2 | Freeze [OUTPUT_CONTRACT.md](OUTPUT_CONTRACT.md) at v1.0: resolve all **[verify]** items, list YOLO classes, fill the failure and performance tables. | Contract v1.0 | Algorithm team reviews it and has no open questions | F6, F7, P10 |
+| H2 | Freeze [CONTRACT.md](CONTRACT.md) at v1.0: resolve all **[verify]** items, list YOLO classes, fill the failure and performance tables. | Contract v1.0 | Algorithm team reviews it and has no open questions | F6, F7, P10 |
 | H3 | Handoff bag set: reference sessions (b), (c), (e) re-recorded with all output topics, plus replay instructions. | Bags + `HANDOFF_README` | The algorithm team replays them on their own machine without help | H1, H2 |
 | H4 | Tests: unit tests for `core/` on synthetic depth (flat floor → free; wall at 2 m → wall line; box → obstacle; NaN patch → unknown), plus a regression run on one recorded session. | `colcon test` suite | Tests pass in a clean checkout | P2–P5 |
 | H5 | Live soak test on the rover, pushed or driven manually: 10 minutes indoors. | Soak-test log and bag | No crash, no stalled topic, health signal accurate | H1 |
@@ -94,7 +94,7 @@ Early option: before ROS is ready, record sessions (a)–(e) as SVO files with t
 
 ## M: Mapping (Phase 4, after G3)
 
-Builds a persistent map from Phase 2's local grids. Starts after the Oct 30 handoff. All inputs exist by then; see Phase 4 in [PHASES.md](PHASES.md).
+Builds a persistent map from Phase 2's local grids. Starts after the Oct 30 handoff. All inputs exist by then; see Phase 4 in [PLAN.md](PLAN.md).
 
 | ID | Task | Output | Done when | Needs |
 | --- | --- | --- | --- | --- |
@@ -103,7 +103,7 @@ Builds a persistent map from Phase 2's local grids. Starts after the Oct 30 hand
 | M3 | Relocalization handling: when `map → odom` jumps, do not smear old cells (for example keep snapshots with their pose and re-place them, or clear and rebuild). | Behaviour in `core/` + a row in contract §4 | Replaying a session with a known jump gives no doubled walls | M2, F6 |
 | M4 | Mapping node and topics: `/rover/map/grid`, `/rover/map/class_grid` (latched), plus `mapping.launch.py` included by `rover.launch.py`. | `rover_mapping/nodes/`, launch file | The map grows in RViz during bag replay of sessions (b) and (c) | M2, H1 |
 | M5 | Save and reload: write `maps/<map_id>/` (`map.yaml` + `map.pgm` in Nav2 `map_server` format, `class.pgm`, `area_map.area`, `map_manifest.json`); reload with `rover.launch.py map:=<map_id>`. | Save script/service and launch argument | A new session started from a saved map lines up with the live local grid within the M1 tolerance | M4, F7 |
-| M6 | Freeze the map interface in [OUTPUT_CONTRACT.md](OUTPUT_CONTRACT.md) §9 and add map bags to the handoff set. | Contract update, bags | The algorithm team loads a saved map on their own machine | M5 |
+| M6 | Freeze the map interface in [CONTRACT.md](CONTRACT.md) §9 and add map bags to the handoff set. | Contract update, bags | The algorithm team loads a saved map on their own machine | M5 |
 
 ---
 
@@ -133,7 +133,7 @@ These are **proposed starting targets**. Replace them with measured values after
 
 ## Dependency picture
 
-Phases 1, 2 and 3 depend on each other only through the interfaces in [PHASES.md](PHASES.md). Each interface has a stand-in, so none of them waits for another to start.
+Phases 1, 2 and 3 depend on each other only through the interfaces in [PLAN.md](PLAN.md). Each interface has a stand-in, so none of them waits for another to start.
 
 ```text
 Phase 0   S1 → S2 ─┬→ S4, S5

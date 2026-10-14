@@ -6,7 +6,7 @@ Branch: `bedrawn-nav-integration`
 
 This responsibility does **not** build the costmap or choose the route. It assembles the reliable, replayable data-synthesis and VSLAM outputs that the next subteam needs to make those decisions. The first question is: **“Can another team consume our obstacle observations, localization context, and VSLAM evidence without having to rediscover frames, timing, calibration, or safety limits?”**
 
-Begin with synthetic or replayed messages while data synthesis performs IMU integration/validation. This baseline does not wait for an IMU result; it switches to the agreed sensor/TF contract at the integration gate. Motors remain off. Read `FOUNDATIONS.md` before this plan.
+Begin with synthetic or replayed messages while data synthesis performs IMU integration/validation. This baseline does not wait for an IMU result; it switches to the agreed sensor/TF contract at the integration gate. Motors remain off. Read [`docs/README.md`](../README.md) before this plan.
 
 ### Vocabulary before implementation
 
@@ -87,35 +87,28 @@ Use a synthetic `LaserScan`/`PointCloud2` source to produce a documented replay 
 
 ## Agent prompts by phase
 
-These are copy-paste prompts for an AI coding agent (or a teammate) working on this responsibility, in the phase order from [TIMELINE.md](TIMELINE.md). Each prompt has a due date and lists anything it waits on. The dates and sync meetings come from [TIMELINE.md](TIMELINE.md#key-dates-and-sync-meetings-october-2026-milestone). A prompt marked **not this month** conflicts with the October plan in [`docs2/`](../../docs2/README.md); its date is set at the Oct 30 review. Start each prompt with the shared preamble below.
+Start each prompt with the shared preamble in [TEAM.md](../TEAM.md#shared-preamble), using this file and branch `bedrawn-nav-integration`. Stage 1 (preflight checklist and manifest schema, prompts 1 and 2) is shared by all three people and is listed there too. Due dates and sync meetings are in [TEAM.md](../TEAM.md#sync-meetings). Stages are explained in [TEAM.md](../TEAM.md#delivery-stages).
 
-> **Preamble.** You are working in the `autonomous_navigation` repo. Before writing code, read `2027_build/docs/FOUNDATIONS.md`, `SUBTEAM_SCOPE.md`, `CODE_CHANGE_OWNERSHIP.md`, and `2027_build/docs/BEDRAWN_NAVIGATION.md`. Work on branch `bedrawn-nav-integration`. Until Oct 30, 2026, `docs2/` is the working plan: Ubuntu 22.04 / ROS 2 Humble, the ZED wrapper owns `map -> odom` and `odom -> base_link` (decision D4), `main.py` stays untouched (D8), and topic names follow `docs2/OUTPUT_CONTRACT.md`. After that, the long-term target is Ubuntu 24.04 / Jazzy. Rules: exactly one component owns each TF edge (`map -> odom -> base_link -> camera_link -> imu_link`); no costmaps, planners, controllers, or motor commands; keep SVO, bags, and large outputs out of Git. If a fact is not in the docs or the data, write "to be decided" instead of inventing it.
-
-### Phase 1: shared measurement preflight (all three, due C0 Mon Oct 12)
-
-1. **Preflight checklist.** "Write a preflight script and checklist that verifies the ZED stream opens (live or SVO), the timestamp convention, the frame ids, and the measured `base_link -> camera_link -> imu_link` geometry. Record one replayable session with a minimal `manifest.json` that matches `docs/contract/session_manifest.example.json`. Output a pass/fail report."
-2. **Freeze the manifest schema.** "Compare `docs/contract/SENSOR_DATA_CONTRACT.md`, the manifest example, and the 'Shared data handoff' list in `2027_build/docs/README.md`. Propose one JSON Schema for the session manifest and a validator with tests. List every field where the docs disagree." *All three agree on it at C0; everyone's loaders and fixtures build against it.*
-
-### Phase 2: parallel work (synthetic baseline, due G2 Fri Oct 23)
+### Stage 2: parallel work (synthetic baseline, due G2 Fri Oct 23)
 
 Build against stand-ins until G1 (Oct 16), then switch to Wobbles' recorded sessions. The only work that needs the rover is the footprint measurement.
 
-3. **Handoff contract (draft by C0 Oct 12, v1.0 frozen at G3 Oct 30).** "Draft the handoff contract. For each message, list its type, topic, frame id, timestamp convention, rate, QoS, range/confidence limits, and marking/clearing semantics. Also list the TF chain and the owner of each edge. Write a validator that checks a bag against the contract." *Waits on: Wobbles' topic list (Wobbles prompt 4). Add the QoS column and the footprint row that `docs/contract/README.md` lists as gaps. After G2, any change needs a version bump and a message to the algorithm team.*
+3. **Handoff contract (draft by C0 Oct 12, v1.0 frozen at G3 Oct 30).** "Draft the handoff contract. For each message, list its type, topic, frame id, timestamp convention, rate, QoS, range/confidence limits, and marking/clearing semantics. Also list the TF chain and the owner of each edge. Write a validator that checks a bag against the contract." *Waits on: Wobbles' topic list (Wobbles prompt 4). Build on `docs/CONTRACT.md`, which already has placeholder QoS values (§1) and a placeholder footprint (§10, `docs/contract/rover_geometry.yaml`). After G2, any change needs a version bump and a message to the algorithm team.*
 4. **Synthetic fixture (due C0 Oct 12).** "Create a synthetic rosbag2 fixture with `LaserScan`, `PointCloud2`, odometry, and TF for a short, known scene, so the bundle can be tested without hardware." *Topic names must match the contract exactly so that swapping in real data later changes nothing.*
 5. **Depth to obstacle adapter (due G2 Oct 23).** "Create `2027_build/src/rover_navigation_inputs/` with a depth-to-`LaserScan` (or constrained depth-slice) adapter node. Handle invalid depth, min/max range, and the source frame. Test it with synthetic messages."
 6. **Footprint and offsets (due G1 Oct 16).** "Add a config file in `2027_build/config/` for the measured rover footprint and sensor mounting offsets, plus a short doc on the safety assumptions. Put a TODO where a measurement is missing. Never assume a point robot." *Measure in the same session as Wobbles prompt 3.*
 7. **Replay harness (due G2 Oct 23).** "Write one replay command that plays the bundle and runs the contract validator: topics present, monotonic timestamps, frames resolving through TF, and one publisher per TF edge."
 
-### Phase 3: bundle gate (G1 Fri Oct 16 to G3 Fri Oct 30)
+### Stage 3: bundle gate (G1 Fri Oct 16 to G3 Fri Oct 30)
 
 8. **Switch to real data (start after G1 Oct 16, due G2 Oct 23).** "Replace the synthetic obstacle source with replayed data-synthesis topics without changing the external contract. Check time alignment with the odometry frame, and document behavior during invalid depth, tracking loss, and relocalization." *Waits on: Wobbles prompts 7 and 11.*
 9. **Assemble the bundle (dry run Tue Oct 27, due G3 Fri Oct 30).** "Assemble the Navigation Data & VSLAM Handoff Bundle: manifest, bag or fixture, obstacle source, optional VSLAM `OccupancyGrid`, footprint and offsets, a README with the replay command, and known failure cases. Then give a fresh agent only the bundle README and confirm it can validate the bundle without reading the legacy prototype." *Waits on: Hedgie prompt 12 and Wobbles prompt 10.*
 
-### Phase 4: package conversion (not this month; date set at the Oct 30 review)
+### Stage 4: package conversion (not this month; date set at the Oct 30 review)
 
-10. **Package gate.** "List the vertical slices that passed the bundle gate. Convert only those into the final Jazzy ROS 2 packages (`rover_camera_ai`, `rover_localization`, `rover_navigation_inputs`, `rover_bringup`) with `colcon build` and tests. Do not migrate the legacy prototype or add empty scaffolding." *Waits on: G3. docs2 already uses its own Humble packages for October.*
+10. **Package gate.** "List the vertical slices that passed the bundle gate. Convert only those into the final Jazzy ROS 2 packages (`rover_camera_ai`, `rover_localization`, `rover_navigation_inputs`, `rover_bringup`) with `colcon build` and tests. Do not migrate the legacy prototype or add empty scaffolding." *Waits on: G3. The October plan uses its own Humble packages (see `docs/README.md`).*
 
-### Phase 5: GPS (not this month; date set at the Oct 30 review)
+### Stage 5: GPS (not this month; date set at the Oct 30 review)
 
 11. **Global-localization pass-through.** "Pass through only the global-localization source that data synthesis approved. Document global-frame jumps and when localization is valid, for the next subteam. Do not configure their costmap or waypoint behavior." *Waits on: Wobbles prompt 12.*
 

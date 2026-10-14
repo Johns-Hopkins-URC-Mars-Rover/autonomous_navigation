@@ -16,3 +16,6 @@ zed_trajectory_plot.png
 
 # YOLO / ultralytics run artefacts
 runs/
+
+# macOS
+.DS_Store

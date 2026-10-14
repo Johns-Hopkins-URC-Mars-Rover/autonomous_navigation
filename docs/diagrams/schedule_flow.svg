@@ -184,6 +184,6 @@
   <text x="904" y="1443" class="body">GPS pass-through</text>
   <text x="888" y="1469" class="needs">Needs: Wobbles' GPS evidence</text>
   <rect x="32" y="1515" width="1160" height="62" rx="12" fill="#edf2f7" stroke="#bcccdc" stroke-width="1"/>
-  <text x="52" y="1542" class="body">Sources: 2027_build/docs/TIMELINE.md and docs2/TIMELINE.md. The Oct 27 dry run is proposed, not in docs2.</text>
+  <text x="52" y="1542" class="body">Sources: docs/TEAM.md and docs/PLAN.md. The Oct 27 dry run is proposed, not yet in the plan.</text>
   <text x="52" y="1564" class="body">Rule: if G1 slips, fusion fixes come first; Hedgie and Bedrawn keep working on recordings.</text>
 </svg>

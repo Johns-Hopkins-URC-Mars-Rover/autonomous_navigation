@@ -1,6 +1,6 @@
 # Setup: Ubuntu 22.04 + ROS 2 Humble + ZED
 
-Tasks S1–S6 in [WORK_BREAKDOWN.md](WORK_BREAKDOWN.md). Follow the linked official guides for exact install commands; they change between releases. This page says **what** to install, **which versions must match**, and **how to check** each step.
+Tasks S1–S6 in [TASKS.md](TASKS.md). Follow the linked official guides for exact install commands; they change between releases. This page says **what** to install, **which versions must match**, and **how to check** each step.
 
 ## 1. The stack
 

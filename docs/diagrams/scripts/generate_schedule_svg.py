@@ -2,12 +2,12 @@
 """Generate the work divergence/convergence flowchart at ../schedule_flow.svg.
 
 Run from the repository root:
-    python3 2027_build/docs/scripts/generate_schedule_svg.py
+    python3 docs/diagrams/scripts/generate_schedule_svg.py
 
 Standard library only. Message: the three people split into parallel lanes after
 each gate and meet again at the next one, where outputs are handed over and the
 plan is recalibrated. Time runs top to bottom; people are columns; every gate is
-one bar spanning all lanes. Dates come from ../TIMELINE.md and docs2/TIMELINE.md.
+one bar spanning all lanes. Dates come from docs/TEAM.md and docs/PLAN.md.
 Same card-engine approach as generate_pipeline_svg.py: content tables on top,
 boxes sized from their wrapped text below.
 """
@@ -250,7 +250,7 @@ def build_svg():
     # Footer: source and the one rule.
     fy = y - ROW_GAP + 30
     parts += [rect(MARGIN, fy, W - 2 * MARGIN, 62, "#edf2f7", "#bcccdc", 1, 12),
-              text(MARGIN + 20, fy + 27, "Sources: 2027_build/docs/TIMELINE.md and docs2/TIMELINE.md. The Oct 27 dry run is proposed, not in docs2.", "body"),
+              text(MARGIN + 20, fy + 27, "Sources: docs/TEAM.md and docs/PLAN.md. The Oct 27 dry run is proposed, not yet in the plan.", "body"),
               text(MARGIN + 20, fy + 49, "Rule: if G1 slips, fusion fixes come first; Hedgie and Bedrawn keep working on recordings.", "body")]
     height = int(fy + 62 + 24)
 

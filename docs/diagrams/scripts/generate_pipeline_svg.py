@@ -2,7 +2,7 @@
 """Generate the simple pipeline diagram at ../pipeline.svg.
 
 Run from the repository root:
-    python3 2027_build/docs/scripts/generate_pipeline_svg.py
+    python3 docs/diagrams/scripts/generate_pipeline_svg.py
 
 Standard library only. Design rule: one short card per person per phase, four
 labelled lines per card (IN, DOES, OUT, NEEDS), one line each. If a card needs

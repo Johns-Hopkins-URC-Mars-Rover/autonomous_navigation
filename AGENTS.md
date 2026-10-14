@@ -203,7 +203,7 @@ If the visual may be viewed in dark mode, give it its own opaque background rect
 
 ### 7.1 Prefer generators over hand-written coordinates
 
-Write a small script (Python standard library is enough for SVG) that holds **content as data** and **drawing as generic functions**. Benefits: you can change a sentence and the layout reflows; the output is reproducible; reviewers can diff the content. The reference implementation in this repo is `2027_build/docs/scripts/generate_pipeline_svg.py` (run `python3 2027_build/docs/scripts/generate_pipeline_svg.py`). Read it as a worked example: content tables at the top, a card layout engine, then assembly.
+Write a small script (Python standard library is enough for SVG) that holds **content as data** and **drawing as generic functions**. Benefits: you can change a sentence and the layout reflows; the output is reproducible; reviewers can diff the content. The reference implementation in this repo is `docs/diagrams/scripts/generate_pipeline_svg.py` (run `python3 docs/diagrams/scripts/generate_pipeline_svg.py`). Read it as a worked example: content tables at the top, a card layout engine, then assembly.
 
 ### 7.2 Size boxes from their content (auto-layout)
 
@@ -290,7 +290,7 @@ Structure it as a **swimlane grid**:
 - Add **one footer line** for the boundary (what is out of scope, who takes over) and one for the single rule that must never be broken.
 - Never state exact dates unless the source gives them. Use relative phases and gates.
 
-**Only on explicit request for a detailed version**, add as separate, clearly secondary material: acceptance checks (DONE), exclusions (NOT), code locations (CODE), per-item source tags, a legend, a contracts table, a TF or interface strip, and a rules panel. Put them in a second diagram when possible, so the overview stays simple. The repository's overview, `2027_build/docs/pipeline.svg`, follows the simple form above.
+**Only on explicit request for a detailed version**, add as separate, clearly secondary material: acceptance checks (DONE), exclusions (NOT), code locations (CODE), per-item source tags, a legend, a contracts table, a TF or interface strip, and a rules panel. Put them in a second diagram when possible, so the overview stays simple. The repository's overview, `docs/diagrams/pipeline.svg`, follows the simple form above.
 
 ### 8.2 Architecture / data-flow diagram
 
@@ -365,11 +365,11 @@ If you cannot render at all, say so plainly in your report and list what remains
 
 ## 11. Delivery notes for this repository
 
-- Put diagrams beside the docs they explain (for example `2027_build/docs/`) and commit **both** the generator script and the generated output.
+- Put diagrams beside the docs they explain (in this repo, `docs/diagrams/`, with generators in `docs/diagrams/scripts/`) and commit **both** the generator script and the generated output.
 - Reference the image from the relevant Markdown with descriptive alt text, and link to the SVG for full-size viewing.
 - State the regeneration command in the script docstring and in the doc that embeds the image.
 - When the underlying plan changes (owners, phases, contracts), update the generator's content tables first, regenerate, and re-run the verification loop. The diagram and the text docs must not contradict each other.
-- Keep wording consistent with the docs under `2027_build/docs/` (for example the names Hedgie, Wobbles, Bedrawn, the "integration gate," and the TF chain `map -> odom -> base_link -> camera_link -> imu_link`).
+- Keep wording consistent with the docs under `docs/` (for example the names Hedgie, Wobbles, Bedrawn, the "integration gate," and the TF chain `map -> odom -> base_link -> camera_link -> imu_link`).
 - Do not make safety or capability claims that the docs do not make (for example, never imply motors are commanded or that a ZED area map is a Nav2 map).
 
 ## 12. Worked mini-example (the thinking, not just the output)
@@ -393,6 +393,6 @@ How to redo it:
 6. *Footer:* one line for the next-subteam boundary and GPS being later, one line for the single TF-ownership rule.
 7. *Build:* same generator approach: content tables on top, auto-wrapping card engine below.
 8. *Verify:* render and inspect. Found the right-most column running off the canvas (column widths summed past the canvas width); fixed in the generator and re-rendered.
-9. *Document:* regeneration command in the script docstring and `TIMELINE.md`.
+9. *Document:* regeneration command in the script docstring and `docs/TEAM.md`.
 
 Pattern to copy: satisfy the latest request, keep the user's grouping, move detail to docs, verify by looking at the render.

@@ -1,5 +1,5 @@
 {
-  "_comment": "Example manifest for docs/contract/SENSOR_DATA_CONTRACT.md section 4. Values in <angle brackets> are placeholders to be filled from the real setup; they are not measurements.",
+  "_comment": "Example manifest for docs/CONTRACT.md section 12. Values in <angle brackets> are placeholders to be filled from the real setup; they are not measurements.",
   "schema_version": "1.0",
   "session_id": "2026-10-08_b_hallway-loop",
   "reference_session": "b",

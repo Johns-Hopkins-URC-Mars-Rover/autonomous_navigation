@@ -4,7 +4,7 @@
 # changing, so these exist only so code and tests can run. Replace them with
 # tape measurements (task F1) once the rover design settles, then set
 # placeholder: false and bump geometry_version. See the placeholder register in
-# docs2/OUTPUT_CONTRACT.md section 10.
+# docs/CONTRACT.md section 10.
 #
 # Rule: no algorithm hardcodes these numbers. Live code reads the mount from TF
 # (base_link -> zed_camera_link); offline code reads it from the session

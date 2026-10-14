@@ -29,16 +29,9 @@
 
 ## Read This First
 
-This is the detailed reference for the **existing standalone Python camera prototype**. Read `2027_build/docs/FOUNDATIONS.md` first if terms such as VIO, TUM trajectory, area map, TF, occupancy grid, or Nav2 are new.
+This is the detailed reference for the **existing standalone Python camera prototype**. Read `docs/README.md` first if terms such as VIO, TUM trajectory, area map, TF, occupancy grid, or Nav2 are new.
 
 In plain language, the current program can watch through a ZED camera, estimate the camera's movement, use the camera IMU to help that estimate, save a replayable ZED recording, save the estimated path, and draw object/depth hints. That is a strong perception/localization baseline. It is **not** yet a complete autonomous-navigation system: it does not publish ROS 2 topics, produce a Nav2 occupancy map/costmap, plan a route, command motors, or establish GPS localization.
-
-Read this document in this order:
-
-1. Overview and Architecture: what runs once per camera frame.
-2. Quick Start and Outputs: how to run/replay it and what files it creates.
-3. Coordinate System and Limitations: what the numbers mean and when not to trust them.
-4. Module Reference and Configuration: implementation detail only when changing code.
 
 ### External references to open when needed
 
@@ -47,7 +40,7 @@ Read this document in this order:
 - [ZED sensor/IMU documentation](https://www.stereolabs.com/docs/sensors/): use this before changing IMU timing, units, or sensor-frame assumptions.
 - [ZED recording documentation](https://www.stereolabs.com/docs/recording/): use this when deciding what an SVO contains and how a replay differs from a live session.
 
-For ROS 2, Nav2, mapping, or GPS work, do not extend this legacy program first. Follow the references in `2027_build/docs/README.md` and use the new workspace instead.
+For ROS 2, Nav2, mapping, or GPS work, do not extend this legacy program. The plan, contract and team docs start at `docs/README.md`.
 
 ## Overview
 
@@ -59,13 +52,6 @@ This pipeline fuses three capabilities into a single, real-time loop driven by a
 
 All three share a single `sl.Camera` handle and a single `zed.grab()` call per frame. The ZED SDK, VO math, scene analysis, and YOLO inference are cleanly separated so each module can be tested or replaced independently.
 
-### What the saved artifacts mean
-
-- **SVO:** replayable ZED camera recording; use it to reproduce camera-side behavior without hardware.
-- **TUM trajectory:** timestamped pose estimate used by trajectory tools. It is a baseline estimate, not ground truth.
-- **ZED area map:** private ZED visual-memory data that helps the ZED tracker revisit a prior area. It is not a Nav2 2D occupancy map.
-- **YOLO/depth result:** a perception hint. It does not itself stop the rover or create an obstacle costmap.
-
 ---
 
 ## Project Structure
@@ -76,6 +62,7 @@ autonomous_navigation/
 ├── main.py                    ← unified entry point (run this)
 ├── object_detection.py        ← YOLO model loading, inference, overlay
 ├── DOCS.md                    ← this file
+├── docs/                      ← project plan, contract, team and per-person docs (start at docs/README.md)
 ├── requirements.txt           ← pip dependencies (ZED SDK + torch installed separately)
 │
 ├── models/
@@ -239,10 +226,10 @@ Press **Q** or **ESC** in any OpenCV window to stop.
 
 | Flag | Default | Description |
 |---|---|---|
-| `--ema-alpha A` | `0.7` | EMA factor for velocity smoothing. Range `[0, 1]`. |
-| `--savgol-window W` | `11` | Savitzky-Golay window for post-run plots (odd). |
-| `--savgol-poly P` | `3` | Savitzky-Golay polynomial order. |
-| `--speed-window N` | `10` | Rolling window size for smoothed speed estimate. |
+| `--ema-alpha A` | `0.7` | EMA factor for velocity smoothing, range `[0, 1]`. Higher = more responsive; lower = smoother. |
+| `--savgol-window W` | `11` | Savitzky-Golay window for post-run plots. Must be odd; larger = smoother. |
+| `--savgol-poly P` | `3` | Savitzky-Golay polynomial order (must be < window). |
+| `--speed-window N` | `10` | Rolling window for the smoothed speed estimate. Longer = more stable. |
 
 ### IMU
 
@@ -289,9 +276,9 @@ All tuneable detection parameters as class attributes:
 | Parameter | Default | Description |
 |---|---|---|
 | `MODEL_PATH` | `"models/best.pt"` | Path to YOLOv8 `.pt` file. |
-| `CONF_THRESH` | `0.35` | Minimum detection confidence. |
-| `IOU_THRESH` | `0.45` | NMS IoU overlap threshold. |
-| `DEPTH_SAMPLE_FRAC` | `0.3` | Fractional size of centre crop for depth sampling. |
+| `CONF_THRESH` | `0.35` | Minimum detection confidence. Lower = more detections (more false positives); higher = more misses. |
+| `IOU_THRESH` | `0.45` | NMS IoU overlap threshold; controls how aggressively duplicate boxes are suppressed. |
+| `DEPTH_SAMPLE_FRAC` | `0.3` | Fractional size of the box's centre crop used for depth sampling. Reduce if objects overlap depth boundaries. |
 | `BOX_COLOR_DEFAULT` | `(0, 200, 255)` | BGR colour for boxes whose class has no entry in `CLASS_COLORS`. |
 | `CLASS_COLORS` | `{}` | Per-class BGR colours, keyed by class id. |
 | `BOX_THICKNESS` | `2` | Bounding box line thickness in pixels. |
@@ -449,16 +436,7 @@ All tuneable scene parameters as class attributes (see [Configuration & Tuning](
 
 ## Data Structures
 
-### `DetectionResult`
-
-```python
-@dataclass
-class DetectionResult:
-    boxes:        list   # [(x1, y1, x2, y2, conf, class_id, label, depth_m), ...]
-    count:        int
-    frame_idx:    int
-    any_detected: bool
-```
+`DetectionResult` is documented under [`object_detection.py`](#detectionresult) and `NavState` under [`slam/zed_vo_core.py`](#navstate). The scene-understanding structures are:
 
 ### `WallInfo`
 
@@ -498,21 +476,11 @@ class SceneState:
     frame_idx: int
 ```
 
-### `NavState`
-
-See [slam/zed_vo_core.py](#slamzed_vo_corepy) above.
-
 ---
 
 ## Configuration & Tuning
 
-### Object Detection (`DetectionConfig` in `object_detection.py`)
-
-| Parameter | Default | Effect |
-|---|---|---|
-| `CONF_THRESH` | `0.35` | Lower = more detections (more false positives); higher = fewer (more misses). |
-| `IOU_THRESH` | `0.45` | Controls how aggressively duplicate boxes are suppressed. |
-| `DEPTH_SAMPLE_FRAC` | `0.3` | Fraction of the bounding box used for depth sampling. Reduce if objects overlap depth boundaries. |
+Object-detection parameters (`DetectionConfig`) are listed under [`object_detection.py`](#detectionconfig).
 
 ### Scene Understanding (`SceneConfig` in `slam/zed_scene_core.py`)
 
@@ -535,14 +503,7 @@ See [slam/zed_vo_core.py](#slamzed_vo_corepy) above.
 | `CLUSTER_DILATE_ITER` | `3` | Morphological dilation passes before clustering. |
 | `OVERLAY_ALPHA` | `0.45` | Opacity of wall highlight overlays. |
 
-### VO Smoothing (CLI flags)
-
-| Flag | Default | Effect |
-|---|---|---|
-| `--ema-alpha` | `0.7` | Higher = more responsive velocity; lower = smoother. |
-| `--savgol-window` | `11` | Larger window = smoother post-run trajectory. Must be odd. |
-| `--savgol-poly` | `3` | Polynomial order for Savitzky-Golay (must be < window). |
-| `--speed-window` | `10` | Longer window = more stable speed estimate. |
+VO smoothing is set with CLI flags; see [CLI Reference](#vo-smoothing).
 
 ---
 
@@ -607,8 +568,6 @@ The combined OpenCV window shows three regions:
 
 **Detection HUD panel**: total target count, per-class breakdown, frame index.
 
-Press **Q** or **ESC** to quit cleanly.
-
 ---
 
 ## Coordinate System
@@ -629,13 +588,7 @@ All positions and distances are in **metres**. The origin is the camera's pose a
 
 **NVIDIA Jetson (JetPack 5 / 6):** Use `--no-plot` to skip matplotlib. Use `--no-display` for fully headless operation. Recommended minimum: Jetson Orin Nano with ZED 2i at HD720 30 FPS.
 
-**Headless Linux:**
-
-```bash
-python main.py --no-display --no-plot
-```
-
-Trajectory and analysis files are still saved. Console output at `--verbose-interval` is the primary monitoring channel.
+**Headless Linux:** run with `--no-display --no-plot` (see Quick Start). Trajectory and analysis files are still saved. Console output at `--verbose-interval` is the primary monitoring channel.
 
 **SVO replay:** Frames are processed as fast as the host allows, not at original capture rate. Use live camera if real-time timing is required.
 
@@ -645,13 +598,7 @@ Trajectory and analysis files are still saved. Console output at `--verbose-inte
 
 ## Standalone Modes
 
-**SLAM + scene only (no YOLO):**
-
-```bash
-python main.py --no-detection
-```
-
-**Scene understanding only (no VO, no YOLO):**
+For SLAM + scene only, use `python main.py --no-detection`. For scene understanding only (no VO, no YOLO):
 
 ```bash
 python slam/zed_scene_core.py
